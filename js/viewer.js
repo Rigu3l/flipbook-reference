@@ -51,6 +51,8 @@
   var hintEl = document.getElementById('hint');
   var prevBtn = document.getElementById('btn-prev');
   var nextBtn = document.getElementById('btn-next');
+  var firstBtn = document.getElementById('btn-first');
+  var lastBtn = document.getElementById('btn-last');
   var sliderEl = document.getElementById('page-slider');
   var thumbsBtn = document.getElementById('btn-thumbs');
   var thumbsPanel = document.getElementById('thumbs-panel');
@@ -61,6 +63,116 @@
   var zoomLabel = document.getElementById('zoom-label');
   var fullscreenBtn = document.getElementById('btn-fullscreen');
   var modeSelect = document.getElementById('mode-select');
+  var bgLayerEl = document.getElementById('bg-layer');
+  var bookMetaEl = document.getElementById('book-meta');
+  var bookSubtitleEl = document.getElementById('book-subtitle');
+  var bookDescEl = document.getElementById('book-description');
+
+  /* ---- F5 design (per-book settings, saved by the owner in the
+     design editor). Stored as a JSON sidecar in Storage next to the
+     PDF: {user_id}/{flipbook_id}.design.json — public read, so any
+     viewer sees the owner's design; no table migration needed. */
+  var design = null;
+  function designDefaults() {
+    return {
+      subtitle: '', description: '', showTitles: true,
+      background: {
+        type: 'color', color: '#f1f5f9', gradient: '',
+        imagePath: '', size: 'cover', position: 'center',
+        transparency: 100, blur: 0
+      },
+      controls: {
+        show: { fullscreen: true, zoom: true, prevNext: true,
+                thumbnails: true, firstPage: true, lastPage: true },
+        size: 'medium', accent: '#059669'
+      }
+    };
+  }
+  function designPath() {
+    if (!book) return '';
+    var userPart = (book.file_path || '').split('/')[0] || '';
+    return userPart + '/' + book.id + '.design.json';
+  }
+  async function loadDesign() {
+    design = designDefaults();
+    if (!book) return;
+    try {
+      var url = window.publicPdfUrl(designPath());
+      if (!url) return;
+      var res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) return; /* no design saved yet — defaults stand */
+      var saved = await res.json();
+      if (saved && typeof saved === 'object') {
+        design.subtitle = saved.subtitle || '';
+        design.description = saved.description || '';
+        if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
+        if (saved.background) Object.assign(design.background, saved.background);
+        if (saved.controls) {
+          if (saved.controls.show) Object.assign(design.controls.show, saved.controls.show);
+          if (saved.controls.size) design.controls.size = saved.controls.size;
+          if (saved.controls.accent) design.controls.accent = saved.controls.accent;
+        }
+      }
+    } catch (e) { /* unreadable design — defaults stand */ }
+  }
+  function applyDesign() {
+    if (!design) design = designDefaults();
+    var bg = design.background;
+    var show = design.controls.show;
+    /* Background layer behind the book. */
+    if (bgLayerEl) {
+      var bgCss = '';
+      if (bg.type === 'image' && bg.imagePath) {
+        bgCss = 'url("' + window.publicPdfUrl(bg.imagePath) + '")';
+      } else if (bg.type === 'gradient' && bg.gradient) {
+        bgCss = bg.gradient;
+      } else {
+        bgCss = bg.color || '#f1f5f9';
+      }
+      bgLayerEl.style.background = bgCss;
+      bgLayerEl.style.backgroundSize = bg.type === 'image'
+        ? (bg.size === 'stretch' ? '100% 100%' : bg.size) : '';
+      bgLayerEl.style.backgroundPosition = bg.position || 'center';
+      bgLayerEl.style.backgroundRepeat = 'no-repeat';
+      bgLayerEl.style.opacity = String(Math.max(0, Math.min(100, bg.transparency || 100)) / 100);
+      bgLayerEl.style.filter = (bg.blur ? 'blur(' + Math.max(0, Math.min(20, bg.blur)) + 'px)' : '');
+      bgLayerEl.classList.remove('hidden');
+    }
+    /* Titles on the background. */
+    if (bookMetaEl) {
+      var showMeta = design.showTitles && (design.subtitle || design.description);
+      bookMetaEl.classList.toggle('hidden', !showMeta);
+      bookSubtitleEl.textContent = design.subtitle || '';
+      bookSubtitleEl.classList.toggle('hidden', !design.subtitle);
+      bookDescEl.textContent = design.description || '';
+      bookDescEl.classList.toggle('hidden', !design.description);
+    }
+    /* Controls show / hide. */
+    if (fullscreenBtn) fullscreenBtn.classList.toggle('hidden', !show.fullscreen);
+    var zoomVisible = show.zoom;
+    if (zoomOutBtn) zoomOutBtn.classList.toggle('hidden', !zoomVisible);
+    if (zoomInBtn) zoomInBtn.classList.toggle('hidden', !zoomVisible);
+    if (zoomFitBtn) zoomFitBtn.classList.toggle('hidden', !zoomVisible);
+    if (zoomLabel) zoomLabel.classList.toggle('hidden', !zoomVisible);
+    if (thumbsBtn) thumbsBtn.classList.toggle('hidden', !show.thumbnails);
+    if (prevBtn) prevBtn.classList.toggle('hidden', !show.prevNext);
+    if (nextBtn) nextBtn.classList.toggle('hidden', !show.prevNext);
+    if (firstBtn) firstBtn.classList.toggle('hidden', !show.firstPage);
+    if (lastBtn) lastBtn.classList.toggle('hidden', !show.lastPage);
+    /* Button size + accent color. */
+    var sizeCls = design.controls.size === 'small' ? 'px-3 py-1.5 text-sm'
+      : design.controls.size === 'large' ? 'px-6 py-3 text-base' : '';
+    [prevBtn, nextBtn, firstBtn, lastBtn].forEach(function (b) {
+      if (!b) return;
+      b.classList.remove('px-3', 'py-1.5', 'text-sm', 'px-6', 'py-3', 'text-base');
+      if (sizeCls) sizeCls.split(' ').forEach(function (c) { b.classList.add(c); });
+    });
+    if (nextBtn && design.controls.accent) {
+      nextBtn.style.backgroundColor = design.controls.accent;
+      nextBtn.style.borderColor = design.controls.accent;
+    }
+    if (sliderEl && design.controls.accent) sliderEl.style.accentColor = design.controls.accent;
+  }
 
   function showError(message) {
     loadingEl.classList.add('hidden');
@@ -569,6 +681,8 @@
       : 'Pages ' + first + '–' + last + ' of ' + totalPages;
     prevBtn.disabled = viewIndex <= 0 || rendering;
     nextBtn.disabled = viewIndex >= views.length - 1 || rendering;
+    if (firstBtn) firstBtn.disabled = viewIndex <= 0 || rendering;
+    if (lastBtn) lastBtn.disabled = viewIndex >= views.length - 1 || rendering;
     sliderEl.value = String(first);
     sliderEl.max = String(totalPages);
     var cf = mode === 'coverflow';
@@ -745,9 +859,11 @@
     sliderTimer = setTimeout(function () { goToPage(target); }, 120);
   });
 
-  /* ---- Prev / next / keys / resize ---- */
+  /* ---- Prev / next / first / last / keys / resize ---- */
   prevBtn.addEventListener('click', prev);
   nextBtn.addEventListener('click', next);
+  firstBtn.addEventListener('click', function () { goToPage(1); });
+  lastBtn.addEventListener('click', function () { goToPage(totalPages); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
@@ -801,6 +917,8 @@
       titleEl.textContent = book.title;
       mode = loadMode();
       modeSelect.value = mode;
+      await loadDesign();
+      applyDesign();
       var url = window.publicPdfUrl(book.file_path);
       pdf = await window.pdfjsLib.getDocument({ url: url }).promise;
       totalPages = pdf.numPages;

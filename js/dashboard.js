@@ -54,12 +54,17 @@
     open.className = 'rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700';
     open.href = 'viewer.html?id=' + row.id;
     open.textContent = 'Open';
+    var designLink = document.createElement('a');
+    designLink.className = 'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100';
+    designLink.href = 'design.html?id=' + row.id;
+    designLink.textContent = 'Design';
     var del = document.createElement('button');
     del.type = 'button';
     del.className = 'rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50';
     del.textContent = 'Delete';
     del.addEventListener('click', function () { deleteFlipbook(row, el); });
     actions.appendChild(open);
+    actions.appendChild(designLink);
     actions.appendChild(del);
     body.appendChild(h3); body.appendChild(meta); body.appendChild(actions);
     el.appendChild(cover); el.appendChild(body);
@@ -70,8 +75,10 @@
     if (!window.confirm('Delete "' + row.title + '"? This cannot be undone.')) return;
     try {
       var user = await window.currentUser();
+      var userPart = (row.file_path || '').split('/')[0] || user.id;
+      var paths = [row.file_path, userPart + '/' + row.id + '.design.json'];
       var delStorage = await window.fbClient.storage
-        .from(window.fbConfig.BUCKET || 'pdfs').remove([row.file_path]);
+        .from(window.fbConfig.BUCKET || 'pdfs').remove(paths);
       if (delStorage.error) throw delStorage.error;
       var delRow = await window.fbClient.from('flipbooks').delete().eq('id', row.id).eq('user_id', user.id);
       if (delRow.error) throw delRow.error;

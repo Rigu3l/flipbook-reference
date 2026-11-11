@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Design — Flipbook Reference</title>
+  <script src="js/vendor/tailwind.js"></script>
+  <script src="js/vendor/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/design.js" defer></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <a href="index.html" class="text-lg font-bold tracking-tight">Flipbook <span class="text-emerald-600">Reference</span></a>
+      <nav id="nav-auth" class="flex items-center gap-4"></nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-3xl px-4 py-10">
+    <p><a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-emerald-700">&larr; My flipbooks</a></p>
+    <h1 class="mt-2 text-2xl font-bold">Design</h1>
+    <p id="design-for" class="mt-1 text-sm text-slate-500">Loading…</p>
+
+    <p id="design-error" class="mt-4 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
+
+    <form id="design-form" class="mt-6 hidden space-y-8" novalidate>
+      <!-- Title -->
+      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="font-semibold">Title</h2>
+        <p class="mt-1 text-sm text-slate-500">Shown on the flipbook's background when "Show titles" is on.</p>
+        <div class="mt-4 space-y-4">
+          <div>
+            <label for="d-title" class="block text-sm font-medium text-slate-700">Title</label>
+            <input id="d-title" type="text" maxlength="120" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="d-subtitle" class="block text-sm font-medium text-slate-700">Subtitle</label>
+            <input id="d-subtitle" type="text" maxlength="160" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
+          </div>
+          <div>
+            <label for="d-description" class="block text-sm font-medium text-slate-700">Description</label>
+            <textarea id="d-description" rows="3" maxlength="400" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none"></textarea>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-slate-700">
+            <input id="d-show-titles" type="checkbox" class="accent-emerald-600"> Show titles on the flipbook's background
+          </label>
+        </div>
+      </section>
+
+      <!-- Background -->
+      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="font-semibold">Background</h2>
+        <p class="mt-1 text-sm text-slate-500">The backdrop behind the book in the reader.</p>
+        <div class="mt-4 flex gap-2" role="tablist" aria-label="Background type">
+          <button type="button" data-bgtype="color" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Color</button>
+          <button type="button" data-bgtype="image" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Image</button>
+          <button type="button" data-bgtype="gradient" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Gradient</button>
+        </div>
+
+        <div id="bg-color-pane" class="mt-4">
+          <p class="text-sm font-medium text-slate-700">Color</p>
+          <div id="bg-swatches" class="mt-2 flex flex-wrap gap-2"></div>
+          <div class="mt-3 flex items-center gap-2">
+            <label for="d-bg-color" class="text-sm text-slate-600">Custom</label>
+            <input id="d-bg-color" type="color" value="#f1f5f9" class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white">
+            <span id="d-bg-color-hex" class="text-sm text-slate-500">#f1f5f9</span>
+          </div>
+        </div>
+
+        <div id="bg-image-pane" class="mt-4 hidden">
+          <p class="text-sm font-medium text-slate-700">Image</p>
+          <div class="mt-2 flex items-center gap-3">
+            <label for="d-bg-image" class="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Choose an image</label>
+            <input id="d-bg-image" type="file" accept="image/*" class="hidden">
+            <button id="d-bg-image-remove" type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50">Remove</button>
+          </div>
+          <p id="d-bg-image-name" class="mt-2 text-sm text-slate-500">No image chosen.</p>
+        </div>
+
+        <div id="bg-gradient-pane" class="mt-4 hidden">
+          <p class="text-sm font-medium text-slate-700">Gradient</p>
+          <div id="bg-gradients" class="mt-2 flex flex-wrap gap-2"></div>
+        </div>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="d-bg-size" class="block text-sm font-medium text-slate-700">Size (image)</label>
+            <select id="d-bg-size" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <option value="cover">Cover</option>
+              <option value="contain">Contain</option>
+              <option value="stretch">Stretch</option>
+            </select>
+          </div>
+          <div>
+            <label for="d-bg-position" class="block text-sm font-medium text-slate-700">Position (image)</label>
+            <select id="d-bg-position" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <option value="center">Center</option>
+              <option value="top">Top</option>
+              <option value="bottom">Bottom</option>
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+              <option value="top left">Top left</option>
+              <option value="top right">Top right</option>
+              <option value="bottom left">Bottom left</option>
+              <option value="bottom right">Bottom right</option>
+            </select>
+          </div>
+          <div>
+            <label for="d-bg-transparency" class="block text-sm font-medium text-slate-700">Transparency <span id="d-bg-transparency-val" class="text-slate-500">100%</span></label>
+            <input id="d-bg-transparency" type="range" min="0" max="100" value="100" class="mt-2 w-full accent-emerald-600">
+          </div>
+          <div>
+            <label for="d-bg-blur" class="block text-sm font-medium text-slate-700">Blur <span id="d-bg-blur-val" class="text-slate-500">0px</span></label>
+            <input id="d-bg-blur" type="range" min="0" max="20" value="0" class="mt-2 w-full accent-emerald-600">
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <p class="text-sm font-medium text-slate-700">Preview</p>
+          <div id="bg-preview" class="mt-2 flex h-32 items-center justify-center overflow-hidden rounded-xl border border-slate-200 text-sm text-slate-500">Background preview</div>
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="font-semibold">Controls</h2>
+        <p class="mt-1 text-sm text-slate-500">Which buttons the reader shows.</p>
+        <div class="mt-4 grid gap-2 sm:grid-cols-2">
+          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="fullscreen" class="accent-emerald-600"> Fullscreen button</label>
+          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="zoom" class="accent-emerald-600"> Zoom buttons</label>
+          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="prevNext" class="accent-emerald-600"> Prev / Next buttons</label>
+          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="thumbnails" class="accent-emerald-600"> Thumbnails button</label>
+          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="firstPage" class="accent-emerald-600"> First page button</label>
+          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="lastPage" class="accent-emerald-600"> Last page button</label>
+        </div>
+        <div class="mt-5 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="d-btn-size" class="block text-sm font-medium text-slate-700">Button size</label>
+            <select id="d-btn-size" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <option value="small">Small</option>
+              <option value="medium">Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+          <div>
+            <label for="d-accent" class="block text-sm font-medium text-slate-700">Accent color</label>
+            <div class="mt-1 flex items-center gap-2">
+              <input id="d-accent" type="color" value="#059669" class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white">
+              <span id="d-accent-hex" class="text-sm text-slate-500">#059669</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="design-save" type="submit" class="rounded-lg bg-emerald-600 px-6 py-2.5 font-medium text-white hover:bg-emerald-700">Save design</button>
+        <a id="design-view" href="#" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 font-medium text-slate-700 hover:bg-slate-100">View flipbook</a>
+        <p id="design-status" class="text-sm text-slate-500"></p>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

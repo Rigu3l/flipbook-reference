@@ -1,0 +1,295 @@
+/* F5 design editor: title / background / controls for one flipbook.
+   Saved as a JSON sidecar in Storage next to the PDF:
+   {user_id}/{flipbook_id}.design.json (public read, owner write).
+   The book title itself is also written back to the flipbooks row. */
+(function () {
+  'use strict';
+
+  var id = getQueryParam('id');
+  var book = null;
+  var user = null;
+  var bgImageFile = null;   /* newly chosen background image, if any */
+  var bgImageRemoved = false;
+
+  var COLOR_SWATCHES = ['#f1f5f9', '#ffffff', '#0f172a', '#059669', '#7c5cff',
+    '#f59e0b', '#ef4444', '#0ea5e9', '#f8ede9', '#fef3c7'];
+  var GRADIENTS = [
+    'linear-gradient(135deg,#7c5cff,#2dd4bf)',
+    'linear-gradient(135deg,#f59e0b,#ef4444)',
+    'linear-gradient(135deg,#0ea5e9,#059669)',
+    'linear-gradient(135deg,#f8ede9,#feb4a7)',
+    'linear-gradient(135deg,#0f172a,#334155)',
+    'linear-gradient(135deg,#fef3c7,#fde68a)'
+  ];
+
+  function defaults() {
+    return {
+      subtitle: '', description: '', showTitles: true,
+      background: {
+        type: 'color', color: '#f1f5f9', gradient: '',
+        imagePath: '', size: 'cover', position: 'center',
+        transparency: 100, blur: 0
+      },
+      controls: {
+        show: { fullscreen: true, zoom: true, prevNext: true,
+                thumbnails: true, firstPage: true, lastPage: true },
+        size: 'medium', accent: '#059669'
+      }
+    };
+  }
+  var design = defaults();
+
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+  function showError(msg) {
+    var el = $('#design-error');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function designPath() {
+    return user.id + '/' + book.id + '.design.json';
+  }
+  function bgImagePath(ext) {
+    return user.id + '/' + book.id + '-bg.' + ext;
+  }
+
+  function readForm() {
+    design.subtitle = $('#d-subtitle').value.trim();
+    design.description = $('#d-description').value.trim();
+    design.showTitles = $('#d-show-titles').checked;
+    var bg = design.background;
+    bg.type = currentBgType();
+    bg.color = $('#d-bg-color').value;
+    bg.size = $('#d-bg-size').value;
+    bg.position = $('#d-bg-position').value;
+    bg.transparency = parseInt($('#d-bg-transparency').value, 10) || 100;
+    bg.blur = parseInt($('#d-bg-blur').value, 10) || 0;
+    if (bgImageRemoved) bg.imagePath = '';
+    $$('input[data-show]').forEach(function (cb) {
+      design.controls.show[cb.dataset.show] = cb.checked;
+    });
+    design.controls.size = $('#d-btn-size').value;
+    design.controls.accent = $('#d-accent').value;
+  }
+
+  function currentBgType() {
+    var active = document.querySelector('.bgtype-btn.bg-emerald-600');
+    return active ? active.dataset.bgtype : 'color';
+  }
+  function setBgType(type) {
+    $$('.bgtype-btn').forEach(function (b) {
+      var on = b.dataset.bgtype === type;
+      b.classList.toggle('bg-emerald-600', on);
+      b.classList.toggle('text-white', on);
+      b.classList.toggle('border-emerald-600', on);
+      b.classList.toggle('bg-white', !on);
+      b.classList.toggle('text-slate-700', !on);
+    });
+    $('#bg-color-pane').classList.toggle('hidden', type !== 'color');
+    $('#bg-image-pane').classList.toggle('hidden', type !== 'image');
+    $('#bg-gradient-pane').classList.toggle('hidden', type !== 'gradient');
+    design.background.type = type;
+    updatePreview();
+  }
+
+  function updatePreview() {
+    var bg = design.background;
+    var pv = $('#bg-preview');
+    var css = '';
+    if (bg.type === 'image' && bg.imagePath) {
+      css = 'url("' + window.publicPdfUrl(bg.imagePath) + '")';
+    } else if (bg.type === 'image' && bgImageFile) {
+      css = 'url("' + URL.createObjectURL(bgImageFile) + '")';
+    } else if (bg.type === 'gradient' && bg.gradient) {
+      css = bg.gradient;
+    } else {
+      css = $('#d-bg-color').value || bg.color || '#f1f5f9';
+    }
+    pv.style.background = css;
+    pv.style.backgroundSize = bg.type === 'image'
+      ? (bg.size === 'stretch' ? '100% 100%' : bg.size) : '';
+    pv.style.backgroundPosition = bg.position || 'center';
+    pv.style.backgroundRepeat = 'no-repeat';
+    pv.style.opacity = String(Math.max(0, Math.min(100, parseInt($('#d-bg-transparency').value, 10) || 100)) / 100);
+    pv.style.filter = 'blur(' + (parseInt($('#d-bg-blur').value, 10) || 0) + 'px)';
+    $('#d-bg-transparency-val').textContent = $('#d-bg-transparency').value + '%';
+    $('#d-bg-blur-val').textContent = $('#d-bg-blur').value + 'px';
+    $('#d-bg-color-hex').textContent = $('#d-bg-color').value;
+    $('#d-accent-hex').textContent = $('#d-accent').value;
+  }
+
+  function fillForm() {
+    $('#d-title').value = book.title || '';
+    $('#d-subtitle').value = design.subtitle || '';
+    $('#d-description').value = design.description || '';
+    $('#d-show-titles').checked = design.showTitles !== false;
+    var bg = design.background;
+    $('#d-bg-color').value = bg.color || '#f1f5f9';
+    $('#d-bg-size').value = bg.size || 'cover';
+    $('#d-bg-position').value = bg.position || 'center';
+    $('#d-bg-transparency').value = String(bg.transparency == null ? 100 : bg.transparency);
+    $('#d-bg-blur').value = String(bg.blur || 0);
+    $('#d-bg-image-name').textContent = bg.imagePath ? 'Current image saved.' : 'No image chosen.';
+    $$('input[data-show]').forEach(function (cb) {
+      cb.checked = design.controls.show[cb.dataset.show] !== false;
+    });
+    $('#d-btn-size').value = design.controls.size || 'medium';
+    $('#d-accent').value = design.controls.accent || '#059669';
+    setBgType(bg.type || 'color');
+    updatePreview();
+  }
+
+  function buildSwatches() {
+    var wrap = $('#bg-swatches');
+    COLOR_SWATCHES.forEach(function (c) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'h-9 w-9 rounded-lg border border-slate-300';
+      b.style.background = c;
+      b.title = c;
+      b.setAttribute('aria-label', 'Background color ' + c);
+      b.addEventListener('click', function () {
+        $('#d-bg-color').value = c;
+        design.background.color = c;
+        updatePreview();
+      });
+      wrap.appendChild(b);
+    });
+    var gwrap = $('#bg-gradients');
+    GRADIENTS.forEach(function (g) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'h-9 w-16 rounded-lg border border-slate-300';
+      b.style.background = g;
+      b.title = g;
+      b.setAttribute('aria-label', 'Background gradient');
+      b.addEventListener('click', function () {
+        design.background.gradient = g;
+        updatePreview();
+      });
+      gwrap.appendChild(b);
+    });
+  }
+
+  async function load() {
+    if (!id) { showError('No flipbook selected.'); return; }
+    user = await window.currentUser();
+    if (!user) { window.location.href = 'auth.html'; return; }
+    if (!window.fbClient) { showError('Supabase is not configured yet.'); return; }
+    try {
+      var res = await window.fbClient
+        .from('flipbooks')
+        .select('id,title,file_path,page_count,user_id')
+        .eq('id', id).eq('user_id', user.id)
+        .maybeSingle();
+      if (res.error) throw res.error;
+      book = res.data;
+      if (!book) { showError('This flipbook does not exist or is not yours.'); return; }
+      $('#design-for').textContent = 'For "' + book.title + '" · ' + (book.page_count || 0) + ' pages';
+      $('#design-view').href = 'viewer.html?id=' + book.id;
+      /* Existing design sidecar, if the owner saved one before. */
+      try {
+        var url = window.publicPdfUrl(designPath());
+        var r = await fetch(url, { cache: 'no-store' });
+        if (r.ok) {
+          var saved = await r.json();
+          if (saved && typeof saved === 'object') {
+            design.subtitle = saved.subtitle || '';
+            design.description = saved.description || '';
+            if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
+            if (saved.background) Object.assign(design.background, saved.background);
+            if (saved.controls) {
+              if (saved.controls.show) Object.assign(design.controls.show, saved.controls.show);
+              if (saved.controls.size) design.controls.size = saved.controls.size;
+              if (saved.controls.accent) design.controls.accent = saved.controls.accent;
+            }
+          }
+        }
+      } catch (e) { /* no saved design yet — defaults stand */ }
+      buildSwatches();
+      fillForm();
+      $('#design-form').classList.remove('hidden');
+    } catch (err) {
+      showError('Could not load this flipbook: ' + (err.message || 'unknown error'));
+    }
+  }
+
+  async function save(e) {
+    e.preventDefault();
+    var status = $('#design-status');
+    var saveBtn = $('#design-save');
+    readForm();
+    saveBtn.disabled = true;
+    status.textContent = 'Saving…';
+    try {
+      /* New background image, if one was chosen. */
+      if (bgImageFile) {
+        var ext = (bgImageFile.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '') || 'png';
+        var path = bgImagePath(ext);
+        var up = await window.fbClient.storage
+          .from(window.fbConfig.BUCKET || 'pdfs')
+          .upload(path, bgImageFile, { upsert: true, contentType: bgImageFile.type || 'image/png' });
+        if (up.error) throw up.error;
+        design.background.imagePath = path;
+        design.background.type = 'image';
+      }
+      /* Design sidecar (JSON). */
+      var blob = new Blob([JSON.stringify(design, null, 2)], { type: 'application/json' });
+      var upDesign = await window.fbClient.storage
+        .from(window.fbConfig.BUCKET || 'pdfs')
+        .upload(designPath(), blob, { upsert: true, contentType: 'application/json' });
+      if (upDesign.error) throw upDesign.error;
+      /* Title lives on the flipbooks row too. */
+      var newTitle = $('#d-title').value.trim();
+      if (newTitle && newTitle !== book.title) {
+        var upd = await window.fbClient.from('flipbooks')
+          .update({ title: newTitle }).eq('id', book.id).eq('user_id', user.id);
+        if (upd.error) throw upd.error;
+        book.title = newTitle;
+        $('#design-for').textContent = 'For "' + book.title + '" · ' + (book.page_count || 0) + ' pages';
+      }
+      bgImageFile = null;
+      bgImageRemoved = false;
+      status.textContent = 'Design saved.';
+      showToast('Design saved.');
+      updatePreview();
+    } catch (err) {
+      status.textContent = '';
+      showToast('Save failed: ' + (err.message || 'unknown error'), 'error');
+    } finally {
+      saveBtn.disabled = false;
+    }
+  }
+
+  /* ---- Wire up ---- */
+  $$('.bgtype-btn').forEach(function (b) {
+    b.addEventListener('click', function () { setBgType(b.dataset.bgtype); });
+  });
+  ['d-bg-color', 'd-bg-size', 'd-bg-position', 'd-bg-transparency', 'd-bg-blur', 'd-accent']
+    .forEach(function (idName) {
+      var el = document.getElementById(idName);
+      if (el) el.addEventListener('input', updatePreview);
+    });
+  $('#d-bg-image').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    if (!f.type || f.type.indexOf('image/') !== 0) { showToast('Choose an image file.', 'error'); return; }
+    bgImageFile = f;
+    bgImageRemoved = false;
+    $('#d-bg-image-name').textContent = f.name + ' — will upload on Save.';
+    setBgType('image');
+  });
+  $('#d-bg-image-remove').addEventListener('click', function () {
+    bgImageFile = null;
+    bgImageRemoved = true;
+    design.background.imagePath = '';
+    $('#d-bg-image').value = '';
+    $('#d-bg-image-name').textContent = 'Image removed — save to apply.';
+    updatePreview();
+  });
+  $('#design-form').addEventListener('submit', save);
+
+  document.addEventListener('DOMContentLoaded', load);
+})();
