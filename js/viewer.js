@@ -84,7 +84,15 @@
   }
 
   /* Views: cover alone, then pairs in spread modes; one page at a
-     time in slider / coverflow / one-page modes. */
+     time in slider / coverflow / one-page modes.
+     Magazine on desktop with an ODD total matches StPageFlip, which
+     inserts a blank inside-cover page after the cover: page 2 sits
+     alone (paired with the blank), then pairs from 3, and the last
+     page sits alone. Without this the views drift one page behind
+     the library — the label says "Pages 2–3" while only page 2
+     shows, Next seems dead, and the last page lands in a spread
+     instead of alone. Fade has no blank page, so it keeps the
+     plain pairing. */
   function buildViews() {
     var list = [];
     if (!isSpreadMode()) {
@@ -92,6 +100,14 @@
       return list;
     }
     list.push([1]);
+    if (mode === 'magazine' && !isSingleMode() && totalPages > 1 && totalPages % 2 === 1) {
+      list.push([2]);
+      for (var start = 3; start <= totalPages; start += 2) {
+        if (start + 1 <= totalPages) list.push([start, start + 1]);
+        else list.push([start]);
+      }
+      return list;
+    }
     for (var start = 2; start <= totalPages; start += 2) {
       if (start + 1 <= totalPages) list.push([start, start + 1]);
       else list.push([start]);
