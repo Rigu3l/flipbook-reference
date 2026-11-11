@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard — Flipbook Reference</title>
+  <script src="js/vendor/tailwind.js"></script>
+  <script src="js/vendor/supabase.min.js"></script>
+  <script src="js/vendor/pdf.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/upload.js" defer></script>
+  <script src="js/dashboard.js" defer></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <a href="index.html" class="text-lg font-bold tracking-tight">Flipbook <span class="text-emerald-600">Reference</span></a>
+      <nav id="nav-auth" class="flex items-center gap-4"></nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <h1 class="text-2xl font-bold">My flipbooks</h1>
+
+    <!-- Upload form, shown when signed in -->
+    <form id="upload-form" class="mt-6 hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm" novalidate>
+      <h2 class="font-semibold">New flipbook</h2>
+      <div id="dropzone" tabindex="0" role="button" aria-label="Choose a PDF file"
+        class="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 px-4 py-10 text-center hover:border-emerald-500">
+        <p class="font-medium text-slate-700">Drag &amp; drop a PDF here, or click to choose one</p>
+        <p id="file-name" class="mt-2 text-sm text-slate-500">No file chosen yet. Max 30 MB.</p>
+        <input id="file-input" type="file" accept="application/pdf,.pdf" class="hidden">
+      </div>
+      <div class="mt-4">
+        <label for="title" class="block text-sm font-medium text-slate-700">Title</label>
+        <input id="title" type="text" required maxlength="120" placeholder="e.g. My product catalog"
+          class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
+      </div>
+      <p id="upload-error" class="mt-4 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
+      <div id="progress-wrap" class="mt-4 hidden">
+        <div class="h-2 overflow-hidden rounded-full bg-slate-200">
+          <div id="progress-bar" class="h-full bg-emerald-600" style="width: 0%"></div>
+        </div>
+        <p id="progress-text" class="mt-1 hidden text-sm text-slate-500"></p>
+      </div>
+      <div id="upload-result" class="mt-4 hidden rounded-lg bg-emerald-50 px-4 py-3">
+        <p class="font-medium text-emerald-800">Flipbook created.</p>
+        <p id="result-title" class="text-sm text-emerald-700"></p>
+      </div>
+      <button id="upload-btn" type="submit" class="mt-4 rounded-lg bg-emerald-600 px-6 py-2.5 font-medium text-white hover:bg-emerald-700">Upload &amp; create</button>
+    </form>
+
+    <section class="mt-10">
+      <h2 class="text-xl font-bold">My flipbooks</h2>
+      <p id="my-status" class="mt-1 text-sm text-slate-500">Loading…</p>
+      <div id="my-grid" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flipbook Reference — Turn PDFs into flipbooks</title>
+  <script src="js/vendor/tailwind.js"></script>
+  <script src="js/vendor/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/home.js" defer></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <a href="index.html" class="text-lg font-bold tracking-tight">Flipbook <span class="text-emerald-600">Reference</span></a>
+      <nav id="nav-auth" class="flex items-center gap-4"></nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4">
+    <section class="py-16 text-center">
+      <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl">Turn a PDF into a flipbook</h1>
+      <p class="mx-auto mt-4 max-w-xl text-lg text-slate-600">Upload a PDF, share a link, and let anyone read it page by page — like a real book.</p>
+      <div class="mt-8 flex justify-center gap-3">
+        <a href="dashboard.html" class="rounded-lg bg-emerald-600 px-6 py-3 font-medium text-white hover:bg-emerald-700">Create a flipbook</a>
+        <a href="auth.html" class="rounded-lg border border-slate-300 bg-white px-6 py-3 font-medium text-slate-700 hover:bg-slate-100">Sign in</a>
+      </div>
+    </section>
+
+    <section class="pb-16">
+      <h2 class="text-xl font-bold">Recent public flipbooks</h2>
+      <p id="recent-status" class="mt-1 text-sm text-slate-500">Loading…</p>
+      <div id="recent-grid" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+  </main>
+
+  <footer class="border-t border-slate-200 py-6 text-center text-sm text-slate-500">
+    Flipbook Reference — a feature reference build. Reader arrives in F2.
+  </footer>
+</body>
+</html>

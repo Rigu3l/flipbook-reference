@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PDF.js offline check</title>
+  <script src="../js/vendor/pdf.min.js"></script>
+</head>
+<body>
+  <pre id="out">running…</pre>
+  <script>
+    (async function () {
+      var out = document.getElementById('out');
+      try {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '../js/vendor/pdf.worker.min.js';
+        var buf = await fetch('../sample-test.pdf').then(function (r) { return r.arrayBuffer(); });
+        var pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        out.textContent = 'PDF.js OK — pages: ' + pdf.numPages;
+      } catch (err) {
+        out.textContent = 'PDF.js FAILED — ' + (err && err.message ? err.message : err);
+      }
+    })();
+  </script>
+</body>
+</html>

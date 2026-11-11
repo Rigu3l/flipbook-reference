@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — Flipbook Reference</title>
+  <script src="js/vendor/tailwind.js"></script>
+  <script src="js/vendor/supabase.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js" defer></script>
+  <script src="js/auth.js" defer></script>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+      <a href="index.html" class="text-lg font-bold tracking-tight">Flipbook <span class="text-emerald-600">Reference</span></a>
+      <nav id="nav-auth" class="flex items-center gap-4"></nav>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-md px-4 py-16">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex gap-2" role="tablist">
+        <button id="tab-signin" type="button" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white" aria-selected="true">Sign in</button>
+        <button id="tab-signup" type="button" class="rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700" aria-selected="false">Sign up</button>
+      </div>
+      <form id="auth-form" class="mt-6 space-y-4">
+        <div>
+          <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+          <input id="email" type="email" required autocomplete="email"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-slate-700">Password</label>
+          <input id="password" type="password" required minlength="6" autocomplete="current-password"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
+        </div>
+        <p id="auth-error" class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
+        <button id="auth-submit" type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white hover:bg-emerald-700">Sign in</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>
