@@ -9,7 +9,18 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f3" defer></script>
+  <script src="js/viewer.js?v=f4" defer></script>
+  <style>
+    #stage-inner { transition: transform .18s ease, opacity .18s ease; }
+    #stage-inner.flip-next { transform: perspective(1000px) rotateY(-55deg); opacity: .35; transform-origin: left center; }
+    #stage-inner.flip-prev { transform: perspective(1000px) rotateY(55deg); opacity: .35; transform-origin: right center; }
+    #stage-inner.slide-next { transform: translateX(-48px); opacity: .4; }
+    #stage-inner.slide-prev { transform: translateX(48px); opacity: .4; }
+    #stage-inner.fade-out { opacity: 0; }
+    #coverflow { position: relative; height: 360px; perspective: 1200px; }
+    .cf-card { position: absolute; left: 50%; top: 50%; transition: transform .35s ease, opacity .35s ease; cursor: pointer; }
+    .cf-card canvas { display: block; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  </style>
 </head>
 <body class="bg-slate-100 text-slate-900">
   <header class="border-b border-slate-200 bg-white">
@@ -23,6 +34,14 @@
   <!-- Reader toolbar: thumbnails, zoom, fullscreen -->
   <div id="toolbar" class="hidden border-b border-slate-200 bg-white">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 py-2">
+      <label class="text-sm text-slate-600" for="mode-select">View</label>
+      <select id="mode-select" class="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm font-medium text-slate-700">
+        <option value="magazine">Magazine (page flip)</option>
+        <option value="slider">Slider</option>
+        <option value="fade">Fade</option>
+        <option value="coverflow">Coverflow</option>
+        <option value="onepage">One page</option>
+      </select>
       <button id="btn-thumbs" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100" aria-expanded="false">Thumbnails</button>
       <span class="mx-1 hidden h-6 w-px bg-slate-200 sm:block"></span>
       <button id="btn-zoom-out" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-40" aria-label="Zoom out">&minus;</button>
@@ -51,6 +70,7 @@
 
     <div id="stage" class="hidden w-full select-none overflow-auto" style="max-height: calc(100vh - 260px)">
       <div id="stage-inner" class="mx-auto flex w-max"></div>
+      <div id="coverflow" class="hidden"></div>
     </div>
 
     <div id="controls" class="mt-6 hidden w-full max-w-3xl items-center gap-3">
