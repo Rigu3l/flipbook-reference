@@ -21,6 +21,7 @@
   var thumbCache = {};
   var mode = 'magazine';
   var turnDir = null;
+  var dragState = { active: false, startX: 0, dir: null };
   var coverBuilt = false;
   var coverCards = {};
 
@@ -206,15 +207,24 @@
     var scale = fitScaleFor(infos, pages.length) * zoom;
     for (var j = 0; j < infos.length; j++) {
       var canvas = await renderPageCanvas(infos[j], scale);
-      /* Hover hint + click to turn: a right (odd) page turns forward,
-         a left (even) page turns back — only when a view exists that way. */
+      /* Hover hint + tap/slide to turn: a right (odd) page turns forward,
+         a left (even) page turns back — only when a view exists that way.
+         A tap turns in the page's direction; a slide over 30px turns in
+         the slide direction (slide left = forward, slide right = back). */
       var n = pages[j];
-      if (n % 2 === 1 && viewIndex < views.length - 1) {
-        canvas.classList.add('page-turn-next');
-        canvas.addEventListener('click', function () { goToView(viewIndex + 1, 'next'); });
-      } else if (n % 2 === 0 && viewIndex > 0) {
-        canvas.classList.add('page-turn-prev');
-        canvas.addEventListener('click', function () { goToView(viewIndex - 1, 'prev'); });
+      var turnDir = null;
+      if (n % 2 === 1 && viewIndex < views.length - 1) turnDir = 'next';
+      else if (n % 2 === 0 && viewIndex > 0) turnDir = 'prev';
+      if (turnDir) {
+        canvas.classList.add(turnDir === 'next' ? 'page-turn-next' : 'page-turn-prev');
+        /* pointerdown only records the grab; the window-level pointerup
+           finishes it, so a slide that ends off the page still turns. */
+        (function (dir) {
+          canvas.addEventListener('pointerdown', function (e) {
+            dragState.active = true; dragState.startX = e.clientX; dragState.dir = dir;
+            e.preventDefault();
+          });
+        })(turnDir);
       }
       stageInnerEl.appendChild(canvas);
     }
@@ -621,6 +631,23 @@
       renderView();
     }, 200);
   });
+
+  /* ---- Slide / tap to turn (finishes a grab started on a page) ---- */
+  function endDrag(e) {
+    if (!dragState.active) return;
+    dragState.active = false;
+    var dx = e.clientX - dragState.startX;
+    if (Math.abs(dx) > 30) {
+      if (dx < 0 && viewIndex < views.length - 1) goToView(viewIndex + 1, 'next');
+      else if (dx > 0 && viewIndex > 0) goToView(viewIndex - 1, 'prev');
+    } else if (dragState.dir === 'next') {
+      goToView(viewIndex + 1, 'next');
+    } else if (dragState.dir === 'prev') {
+      goToView(viewIndex - 1, 'prev');
+    }
+  }
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', function () { dragState.active = false; });
 
   async function loadBook() {
     if (!id) { showError('No flipbook selected.'); return; }
