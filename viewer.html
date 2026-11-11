@@ -9,7 +9,7 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f4d" defer></script>
+  <script src="js/viewer.js?v=f4e" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     .flip-overlay { position: fixed; z-index: 40; background: #f1f5f9; }
@@ -73,7 +73,7 @@
     </div>
 
     <div id="stage" class="hidden w-full select-none overflow-auto" style="max-height: calc(100vh - 260px)">
-      <div id="stage-inner" class="mx-auto flex w-max"></div>
+      <div id="stage-inner" class="relative mx-auto flex w-max"></div>
       <div id="coverflow" class="hidden"></div>
     </div>
 

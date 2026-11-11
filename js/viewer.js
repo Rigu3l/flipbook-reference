@@ -163,7 +163,6 @@
   }
 
   function fitScaleFor(infos, count) {
-    var gap = count > 1 ? 8 : 0;
     var maxW = stageEl.clientWidth || window.innerWidth - 32;
     var maxH = window.innerHeight - 260;
     var totalW = 0, maxPageH = 0;
@@ -171,7 +170,6 @@
       totalW += infos[i].width;
       if (infos[i].height > maxPageH) maxPageH = infos[i].height;
     }
-    totalW += gap * (count - 1);
     return Math.min(maxW / totalW, maxH / maxPageH, 2);
   }
 
@@ -206,11 +204,21 @@
     stageEl.classList.remove('hidden');
     var infos = await loadPageInfos(pages);
     var scale = fitScaleFor(infos, pages.length) * zoom;
-    var gap = pages.length > 1 ? 8 : 0;
     for (var j = 0; j < infos.length; j++) {
       var canvas = await renderPageCanvas(infos[j], scale);
-      if (j > 0) canvas.style.marginLeft = gap + 'px';
       stageInnerEl.appendChild(canvas);
+    }
+    /* The two pages of a spread meet at the spine — no gap between
+       them (the old 8px gap showed the background through the fold,
+       so the gap opened, closed during the turn, and opened again).
+       The spine shadow keeps the center fold readable. */
+    if (pages.length > 1) {
+      var spine = document.createElement('div');
+      spine.className = 'flip-spine';
+      spine.style.left = 'calc(50% - 13px)';
+      spine.style.top = '0';
+      spine.style.bottom = '0';
+      stageInnerEl.appendChild(spine);
     }
   }
 
