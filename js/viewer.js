@@ -351,6 +351,9 @@
       var endRot = isNext ? -180 : 0;
       card.style.transform = cardTF(startRot);
       void overlay.offsetWidth;
+      /* The label, slider and URL track the destination from the
+         moment the turn starts, not after it lands. */
+      updateChrome();
       card.style.transform = cardTF(endRot);
       await sleep(650);
       /* Settle: when the new view is a single page, slide the card to
