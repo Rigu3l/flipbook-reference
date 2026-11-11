@@ -118,7 +118,7 @@
            is drawn underneath, then the stage eases back to rest. */
         var animClass = null;
         if (turnDir) {
-          if (mode === 'magazine') animClass = 'flip-' + turnDir;
+          if (mode === 'magazine') animClass = 'flip-turn';
           else if (mode === 'slider') animClass = 'slide-' + turnDir;
           else if (mode === 'fade') animClass = 'fade-out';
         }

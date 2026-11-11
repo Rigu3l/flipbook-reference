@@ -9,11 +9,10 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f4" defer></script>
+  <script src="js/viewer.js?v=f4b" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
-    #stage-inner.flip-next { transform: perspective(1000px) rotateY(-55deg); opacity: .35; transform-origin: left center; }
-    #stage-inner.flip-prev { transform: perspective(1000px) rotateY(55deg); opacity: .35; transform-origin: right center; }
+    #stage-inner.flip-turn { transform: scaleX(0); opacity: .55; transform-origin: center; }
     #stage-inner.slide-next { transform: translateX(-48px); opacity: .4; }
     #stage-inner.slide-prev { transform: translateX(48px); opacity: .4; }
     #stage-inner.fade-out { opacity: 0; }
