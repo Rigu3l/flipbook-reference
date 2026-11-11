@@ -584,8 +584,22 @@
     goToView(viewForPage(Math.min(Math.max(page, 1), totalPages)));
   }
 
-  function next() { goToView(viewIndex + 1, 'next'); }
-  function prev() { goToView(viewIndex - 1, 'prev'); }
+  function next() {
+    /* Magazine: the library's animated flip (turnToPage jumps
+       instantly with no animation — that was the dead buttons). */
+    if (mode === 'magazine' && pageFlip) {
+      try { pageFlip.flipNext(); } catch (e) {}
+      return;
+    }
+    goToView(viewIndex + 1, 'next');
+  }
+  function prev() {
+    if (mode === 'magazine' && pageFlip) {
+      try { pageFlip.flipPrev(); } catch (e) {}
+      return;
+    }
+    goToView(viewIndex - 1, 'prev');
+  }
 
   /* ---- Viewer modes ---- */
   function loadMode() {
