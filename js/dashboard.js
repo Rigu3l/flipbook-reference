@@ -50,11 +50,16 @@
     meta.textContent = (row.page_count || 0) + ' pages · ' + (row.views || 0) + ' views · ' + formatDate(row.created_at);
     var actions = document.createElement('div');
     actions.className = 'mt-3 flex gap-2';
+    var open = document.createElement('a');
+    open.className = 'rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700';
+    open.href = 'viewer.html?id=' + row.id;
+    open.textContent = 'Open';
     var del = document.createElement('button');
     del.type = 'button';
     del.className = 'rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50';
     del.textContent = 'Delete';
     del.addEventListener('click', function () { deleteFlipbook(row, el); });
+    actions.appendChild(open);
     actions.appendChild(del);
     body.appendChild(h3); body.appendChild(meta); body.appendChild(actions);
     el.appendChild(cover); el.appendChild(body);

@@ -37,7 +37,14 @@
         var meta = document.createElement('p');
         meta.className = 'mt-1 text-sm text-slate-500';
         meta.textContent = (row.page_count || 0) + ' pages · ' + (row.views || 0) + ' views · ' + formatDate(row.created_at);
-        body.appendChild(h3); body.appendChild(meta);
+        var actions = document.createElement('div');
+        actions.className = 'mt-3';
+        var open = document.createElement('a');
+        open.className = 'inline-block rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700';
+        open.href = 'viewer.html?id=' + row.id;
+        open.textContent = 'Open';
+        actions.appendChild(open);
+        body.appendChild(h3); body.appendChild(meta); body.appendChild(actions);
         card.appendChild(cover); card.appendChild(body);
         grid.appendChild(card);
       });
