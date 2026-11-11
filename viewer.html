@@ -9,10 +9,15 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f4b" defer></script>
+  <script src="js/viewer.js?v=f4c" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
-    #stage-inner.flip-turn { transform: scaleX(0); opacity: .55; transform-origin: center; }
+    .flip-overlay { position: fixed; z-index: 40; background: #f1f5f9; }
+    .flip-base-canvas { position: absolute; background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.16); transition: opacity .15s ease; }
+    .flip-spine { position: absolute; width: 26px; background: linear-gradient(to right, transparent, rgba(0,0,0,.14), transparent); pointer-events: none; }
+    .flip-card { position: absolute; transform-origin: left center; transform-style: preserve-3d; transition: transform .6s ease-in-out; box-shadow: -12px 0 28px rgba(0,0,0,.20); }
+    .flip-face { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; background: #fff; }
+    .flip-face.flip-back { transform: rotateY(180deg); }
     #stage-inner.slide-next { transform: translateX(-48px); opacity: .4; }
     #stage-inner.slide-prev { transform: translateX(48px); opacity: .4; }
     #stage-inner.fade-out { opacity: 0; }

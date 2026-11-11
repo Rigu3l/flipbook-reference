@@ -102,7 +102,7 @@
 
   /* Render the current view. If a render is already running, remember
      that the newest view still needs drawing instead of dropping it. */
-  async function renderView() {
+  async function renderView(fromIndex) {
     if (rendering) { pendingRender = true; return; }
     if (!pdf) return;
     rendering = true;
@@ -111,6 +111,18 @@
         stageInnerEl.classList.add('hidden');
         coverflowEl.classList.remove('hidden');
         await renderCoverflow();
+      } else if (mode === 'magazine' && turnDir) {
+        coverflowEl.classList.add('hidden');
+        stageInnerEl.classList.remove('hidden');
+        var dir = turnDir; turnDir = null;
+        var flipped = false;
+        try { flipped = await flipTurn(dir, fromIndex); } catch (e) { flipped = false; }
+        if (!flipped) {
+          stageInnerEl.classList.add('fade-out');
+          await sleep(180);
+          await drawSpread();
+          stageInnerEl.classList.remove('fade-out');
+        }
       } else {
         coverflowEl.classList.add('hidden');
         stageInnerEl.classList.remove('hidden');
@@ -118,8 +130,7 @@
            is drawn underneath, then the stage eases back to rest. */
         var animClass = null;
         if (turnDir) {
-          if (mode === 'magazine') animClass = 'flip-turn';
-          else if (mode === 'slider') animClass = 'slide-' + turnDir;
+          if (mode === 'slider') animClass = 'slide-' + turnDir;
           else if (mode === 'fade') animClass = 'fade-out';
         }
         if (animClass) {
@@ -140,43 +151,222 @@
     updateChrome();
   }
 
-  async function drawSpread() {
-    var pages = currentPages();
-    stageInnerEl.innerHTML = '';
-    stageEl.classList.remove('hidden');
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var gap = pages.length > 1 ? 8 : 0;
-    var maxW = stageEl.clientWidth || window.innerWidth - 32;
-    var maxH = window.innerHeight - 260;
+  /* Load page dimensions (no rendering yet). */
+  async function loadPageInfos(pages) {
     var infos = [];
-    var totalW = 0;
-    var maxPageH = 0;
     for (var i = 0; i < pages.length; i++) {
       var pg = await pdf.getPage(pages[i]);
       var vp = pg.getViewport({ scale: 1 });
       infos.push({ page: pg, width: vp.width, height: vp.height });
-      totalW += vp.width;
-      if (vp.height > maxPageH) maxPageH = vp.height;
     }
-    totalW += gap * (pages.length - 1);
-    var fit = Math.min(maxW / totalW, maxH / maxPageH, 2);
-    var scale = fit * zoom;
+    return infos;
+  }
+
+  function fitScaleFor(infos, count) {
+    var gap = count > 1 ? 8 : 0;
+    var maxW = stageEl.clientWidth || window.innerWidth - 32;
+    var maxH = window.innerHeight - 260;
+    var totalW = 0, maxPageH = 0;
+    for (var i = 0; i < infos.length; i++) {
+      totalW += infos[i].width;
+      if (infos[i].height > maxPageH) maxPageH = infos[i].height;
+    }
+    totalW += gap * (count - 1);
+    return Math.min(maxW / totalW, maxH / maxPageH, 2);
+  }
+
+  function renderPageCanvas(info, scale) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var canvas = document.createElement('canvas');
+    canvas.className = 'bg-white shadow-md';
+    canvas.width = Math.round(info.width * scale * dpr);
+    canvas.height = Math.round(info.height * scale * dpr);
+    canvas.style.width = Math.round(info.width * scale) + 'px';
+    canvas.style.height = Math.round(info.height * scale) + 'px';
+    return info.page.render({
+      canvasContext: canvas.getContext('2d'),
+      viewport: info.page.getViewport({ scale: scale * dpr })
+    }).promise.then(function () { return canvas; });
+  }
+
+  function cloneResampled(src, cssW, cssH) {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var c = document.createElement('canvas');
+    c.width = Math.round(cssW * dpr);
+    c.height = Math.round(cssH * dpr);
+    c.style.width = cssW + 'px';
+    c.style.height = cssH + 'px';
+    c.getContext('2d').drawImage(src, 0, 0, src.width, src.height, 0, 0, c.width, c.height);
+    return c;
+  }
+
+  async function drawSpread() {
+    var pages = currentPages();
+    stageInnerEl.innerHTML = '';
+    stageEl.classList.remove('hidden');
+    var infos = await loadPageInfos(pages);
+    var scale = fitScaleFor(infos, pages.length) * zoom;
+    var gap = pages.length > 1 ? 8 : 0;
     for (var j = 0; j < infos.length; j++) {
-      var info = infos[j];
-      var canvas = document.createElement('canvas');
-      canvas.className = 'bg-white shadow-md';
-      canvas.width = Math.round(info.width * scale * dpr);
-      canvas.height = Math.round(info.height * scale * dpr);
-      canvas.style.width = Math.round(info.width * scale) + 'px';
-      canvas.style.height = Math.round(info.height * scale) + 'px';
+      var canvas = await renderPageCanvas(infos[j], scale);
       if (j > 0) canvas.style.marginLeft = gap + 'px';
       stageInnerEl.appendChild(canvas);
-      var ctx = canvas.getContext('2d');
-      await info.page.render({
-        canvasContext: ctx,
-        viewport: info.page.getViewport({ scale: scale * dpr })
-      }).promise;
     }
+  }
+
+  /* ---- Realistic page turn (Magazine mode) ----
+     The turning page is a card: its front is the page you are
+     leaving, its back is the page you are turning to. It rotates
+     around the spine with perspective, revealing the next spread
+     underneath — the way a real page peels over. */
+  async function flipTurn(dir, fromIndex) {
+    var fromPages = views[fromIndex] || [];
+    var toPages = currentPages();
+    if (!fromPages.length || !toPages.length) return false;
+    var isNext = dir === 'next';
+    /* In single-page (narrow) mode, moving from an even page to the
+       next odd page only crosses the spread — there is no page to
+       turn, so let the caller fall back to a fade. */
+    if (fromPages.length === 1) {
+      var fp = fromPages[0];
+      if (isNext && fp % 2 === 0) return false;
+      if (!isNext && fp % 2 === 1) return false;
+    }
+    /* Odd pages are right pages, even pages are left pages. */
+    function slots(pages) {
+      if (pages.length === 2) return { left: pages[0], right: pages[1] };
+      var n = pages[0];
+      return n % 2 === 1 ? { left: null, right: n } : { left: n, right: null };
+    }
+    var from = slots(fromPages), to = slots(toPages);
+    /* Base = [page staying on the left, page revealed on the right];
+       card front = page leaving, card back = page arriving. */
+    var cardFrontPage, cardBackPage, baseLeftPage, baseRightPage;
+    if (isNext) {
+      cardFrontPage = from.right; cardBackPage = to.left;
+      baseLeftPage = from.left; baseRightPage = to.right;
+    } else {
+      cardFrontPage = to.right; cardBackPage = from.left;
+      baseLeftPage = to.left; baseRightPage = from.right;
+    }
+    if (!cardFrontPage || !cardBackPage) return false;
+    var toInfos = await loadPageInfos(toPages);
+    var scale = fitScaleFor(toInfos, toPages.length) * zoom;
+    var pw = Math.round(toInfos[0].width * scale);
+    var ph = Math.round(toInfos[0].height * scale);
+    /* A long perspective distance keeps the turn from stretching the
+       page vertically mid-flight (a short one magnifies the near edge
+       by 40%+ and the page looks taller than the book). */
+    var persp = Math.round(pw * 12);
+    function cardTF(rot, settlePx) {
+      var t = 'perspective(' + persp + 'px) rotateY(' + rot + 'deg)';
+      if (settlePx) t += ' translateX(' + settlePx + 'px)';
+      return t;
+    }
+    /* Re-center the stage so the overlay lines up with the new view. */
+    stageEl.scrollLeft = 0; stageEl.scrollTop = 0;
+    var rect = stageEl.getBoundingClientRect();
+    var SW = rect.width, SH = rect.height;
+    var CX = SW / 2;
+    var top = Math.max(0, Math.round((SH - ph) / 2));
+    /* Fresh-render the arriving pages; clone the leaving pages from
+       the stage (resampled to the new scale). */
+    var toCanvas = {};
+    await Promise.all(toPages.map(function (n) {
+      var info = toInfos[toPages.indexOf(n)];
+      return renderPageCanvas(info, scale).then(function (c) { toCanvas[n] = c; });
+    }));
+    var stageCanvases = stageInnerEl.querySelectorAll('canvas');
+    async function canvasFor(pageNum, source) {
+      if (!pageNum) return null;
+      if (source === 'to') {
+        if (toCanvas[pageNum]) return toCanvas[pageNum];
+        var info = (await loadPageInfos([pageNum]))[0];
+        var c = await renderPageCanvas(info, scale);
+        toCanvas[pageNum] = c;
+        return c;
+      }
+      var idx = fromPages.indexOf(pageNum);
+      var src = stageCanvases[idx];
+      if (src) return cloneResampled(src, pw, ph);
+      var info2 = (await loadPageInfos([pageNum]))[0];
+      return renderPageCanvas(info2, scale);
+    }
+    var cardFront, cardBack, baseLeft, baseRight;
+    if (isNext) {
+      cardFront = await canvasFor(from.right, 'from');
+      cardBack = await canvasFor(to.left, 'to');
+      baseLeft = await canvasFor(from.left, 'from');
+      baseRight = await canvasFor(to.right, 'to');
+    } else {
+      cardFront = await canvasFor(to.right, 'to');
+      cardBack = await canvasFor(from.left, 'from');
+      baseLeft = await canvasFor(to.left, 'to');
+      baseRight = await canvasFor(from.right, 'from');
+    }
+    if (!cardFront || !cardBack) return false;
+    /* Overlay over the stage; the new view renders underneath it. */
+    var overlay = document.createElement('div');
+    overlay.className = 'flip-overlay';
+    overlay.style.left = rect.left + 'px';
+    overlay.style.top = rect.top + 'px';
+    overlay.style.width = SW + 'px';
+    overlay.style.height = SH + 'px';
+    function place(canvas, x) {
+      if (!canvas) return;
+      canvas.classList.remove('bg-white', 'shadow-md');
+      canvas.classList.add('flip-base-canvas');
+      canvas.style.left = x + 'px';
+      canvas.style.top = top + 'px';
+      canvas.style.width = pw + 'px';
+      canvas.style.height = ph + 'px';
+      canvas.style.marginLeft = '0';
+      overlay.appendChild(canvas);
+    }
+    place(baseLeft, CX - pw);
+    place(baseRight, CX);
+    var spine = document.createElement('div');
+    spine.className = 'flip-spine';
+    spine.style.left = (CX - 13) + 'px';
+    spine.style.top = top + 'px';
+    spine.style.height = ph + 'px';
+    overlay.appendChild(spine);
+    var card = document.createElement('div');
+    card.className = 'flip-card';
+    card.style.left = CX + 'px';
+    card.style.top = top + 'px';
+    card.style.width = pw + 'px';
+    card.style.height = ph + 'px';
+    cardFront.classList.remove('bg-white', 'shadow-md');
+    cardBack.classList.remove('bg-white', 'shadow-md');
+    cardFront.classList.add('flip-face');
+    cardBack.classList.add('flip-face', 'flip-back');
+    card.appendChild(cardFront);
+    card.appendChild(cardBack);
+    overlay.appendChild(card);
+    var stageRender = drawSpread();
+    document.body.appendChild(overlay);
+    try {
+      var startRot = isNext ? 0 : -180;
+      var endRot = isNext ? -180 : 0;
+      card.style.transform = cardTF(startRot);
+      void overlay.offsetWidth;
+      card.style.transform = cardTF(endRot);
+      await sleep(650);
+      /* Settle: when the new view is a single page, slide the card to
+         the centered position and fade out the old page it leaves. */
+      if (toPages.length === 1) {
+        var leaving = isNext ? baseLeft : baseRight;
+        if (leaving) leaving.style.opacity = '0';
+        card.style.transition = 'transform .15s ease';
+        card.style.transform = cardTF(endRot, -pw / 2);
+        await sleep(170);
+      }
+      await stageRender;
+    } finally {
+      overlay.remove();
+    }
+    return true;
   }
 
   /* Coverflow: every page rendered once at a fixed height, laid out
@@ -259,9 +449,10 @@
 
   function goToView(index, dir) {
     if (index < 0 || index >= views.length || index === viewIndex) return;
+    var from = viewIndex;
     turnDir = dir || (index > viewIndex ? 'next' : 'prev');
     viewIndex = index;
-    renderView();
+    renderView(from);
   }
 
   function goToPage(page) {
