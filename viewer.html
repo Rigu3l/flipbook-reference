@@ -7,17 +7,18 @@
   <script src="js/vendor/tailwind.js"></script>
   <script src="js/vendor/supabase.min.js"></script>
   <script src="js/vendor/pdf.min.js"></script>
+  <script src="js/vendor/page-flip.browser.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f4g" defer></script>
+  <script src="js/viewer.js?v=f4h" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
-    .flip-overlay { position: fixed; z-index: 40; background: #f1f5f9; }
-    .flip-base-canvas { position: absolute; background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.16); transition: opacity .15s ease; }
+    /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
+    #book-wrap { transform-origin: top center; transition: width .3s ease; }
+    #book { box-shadow: 0 20px 50px rgba(0,0,0,.5); background: #fff; transition: margin-left .3s ease; }
+    #book .page { background: #fff; }
+    #book img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .flip-spine { position: absolute; width: 26px; background: linear-gradient(to right, transparent, rgba(0,0,0,.14), transparent); pointer-events: none; }
-    .flip-card { position: absolute; transform-origin: left center; transform-style: preserve-3d; transition: transform .6s ease-in-out; box-shadow: -12px 0 28px rgba(0,0,0,.20); }
-    .flip-face { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; background: #fff; }
-    .flip-face.flip-back { transform: rotateY(180deg); }
     /* Hover a turnable page: its outer edge lifts toward the viewer,
        like the page starting to turn; pointer cursor, click turns it. */
     #stage-inner canvas.page-turn-next, #stage-inner canvas.page-turn-prev { cursor: pointer; transition: transform .25s ease, box-shadow .25s ease; }
@@ -81,6 +82,7 @@
 
     <div id="stage" class="hidden w-full select-none overflow-auto" style="max-height: calc(100vh - 260px)">
       <div id="stage-inner" class="relative mx-auto flex w-max overflow-hidden"></div>
+      <div id="book-wrap" class="mx-auto hidden w-max"><div id="book"></div></div>
       <div id="coverflow" class="hidden"></div>
     </div>
 

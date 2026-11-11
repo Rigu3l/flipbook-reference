@@ -24,6 +24,17 @@
   var dragState = { active: false, startX: 0, dir: null };
   var coverBuilt = false;
   var coverCards = {};
+  /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
+  var pageFlip = null;
+  var pageImages = [];
+  var pageRendered = [];
+  var pdfAspect = 733 / 550;
+  var bookUsesBlank = false;
+  var blankImage = null;
+  var bookSingleWidth = 0;
+  var bookIsDesktop = false;
+  var allRendered = false;
+  var restRendering = false;
 
   var titleEl = document.getElementById('viewer-title');
   var labelEl = document.getElementById('page-label');
@@ -32,6 +43,8 @@
   var errorTextEl = document.getElementById('error-text');
   var stageEl = document.getElementById('stage');
   var stageInnerEl = document.getElementById('stage-inner');
+  var bookWrapEl = document.getElementById('book-wrap');
+  var bookEl = document.getElementById('book');
   var coverflowEl = document.getElementById('coverflow');
   var toolbarEl = document.getElementById('toolbar');
   var controlsEl = document.getElementById('controls');
@@ -109,22 +122,27 @@
     rendering = true;
     try {
       if (mode === 'coverflow') {
+        bookWrapEl.classList.add('hidden');
         stageInnerEl.classList.add('hidden');
         coverflowEl.classList.remove('hidden');
         await renderCoverflow();
-      } else if (mode === 'magazine' && turnDir) {
+      } else if (mode === 'magazine') {
+        /* StPageFlip book (same as Manuazine). Turns are driven by
+           the library; its 'flip' event keeps the label in sync. */
+        stageEl.classList.remove('hidden');
+        stageInnerEl.classList.add('hidden');
         coverflowEl.classList.add('hidden');
-        stageInnerEl.classList.remove('hidden');
-        var dir = turnDir; turnDir = null;
-        var flipped = false;
-        try { flipped = await flipTurn(dir, fromIndex); } catch (e) { flipped = false; }
-        if (!flipped) {
-          stageInnerEl.classList.add('fade-out');
-          await sleep(180);
-          await drawSpread();
-          stageInnerEl.classList.remove('fade-out');
+        bookWrapEl.classList.remove('hidden');
+        turnDir = null;
+        await initStPageFlip();
+        var target = (currentPages()[0] || 1);
+        var shown = stCurrentPage();
+        if (shown !== target) {
+          try { pageFlip.turnToPage(libraryIndexForPage(target)); } catch (e) {}
         }
+        applyCoverMode();
       } else {
+        bookWrapEl.classList.add('hidden');
         coverflowEl.classList.add('hidden');
         stageInnerEl.classList.remove('hidden');
         /* Page-turn animation: the old view moves out, the new view
@@ -242,162 +260,232 @@
     }
   }
 
-  /* ---- Realistic page turn (Magazine mode) ----
-     The turning page is a card: its front is the page you are
-     leaving, its back is the page you are turning to. It rotates
-     around the spine with perspective, revealing the next spread
-     underneath — the way a real page peels over. */
-  async function flipTurn(dir, fromIndex) {
-    var fromPages = views[fromIndex] || [];
-    var toPages = currentPages();
-    if (!fromPages.length || !toPages.length) return false;
-    var isNext = dir === 'next';
-    /* In single-page (narrow) mode, moving from an even page to the
-       next odd page only crosses the spread — there is no page to
-       turn, so let the caller fall back to a fade. */
-    if (fromPages.length === 1) {
-      var fp = fromPages[0];
-      if (isNext && fp % 2 === 0) return false;
-      if (!isNext && fp % 2 === 1) return false;
-    }
-    /* Odd pages are right pages, even pages are left pages. */
-    function slots(pages) {
-      if (pages.length === 2) return { left: pages[0], right: pages[1] };
-      var n = pages[0];
-      return n % 2 === 1 ? { left: null, right: n } : { left: n, right: null };
-    }
-    var from = slots(fromPages), to = slots(toPages);
-    /* Base = [page staying on the left, page revealed on the right];
-       card front = page leaving, card back = page arriving. */
-    var cardFrontPage, cardBackPage, baseLeftPage, baseRightPage;
-    if (isNext) {
-      cardFrontPage = from.right; cardBackPage = to.left;
-      baseLeftPage = from.left; baseRightPage = to.right;
-    } else {
-      cardFrontPage = to.right; cardBackPage = from.left;
-      baseLeftPage = to.left; baseRightPage = from.right;
-    }
-    if (!cardFrontPage || !cardBackPage) return false;
-    var toInfos = await loadPageInfos(toPages);
-    var scale = fitScaleFor(toInfos, toPages.length) * zoom;
-    var pw = Math.round(toInfos[0].width * scale);
-    var ph = Math.round(toInfos[0].height * scale);
-    /* A long perspective distance keeps the turn from stretching the
-       page vertically mid-flight (a short one magnifies the near edge
-       by 40%+ and the page looks taller than the book). */
-    var persp = Math.round(pw * 12);
-    function cardTF(rot, settlePx) {
-      var t = 'perspective(' + persp + 'px) rotateY(' + rot + 'deg)';
-      if (settlePx) t += ' translateX(' + settlePx + 'px)';
-      return t;
-    }
-    /* Re-center the stage so the overlay lines up with the new view. */
-    stageEl.scrollLeft = 0; stageEl.scrollTop = 0;
-    var rect = stageEl.getBoundingClientRect();
-    var SW = rect.width, SH = rect.height;
-    var CX = SW / 2;
-    var top = Math.max(0, Math.round((SH - ph) / 2));
-    /* Fresh-render the arriving pages; clone the leaving pages from
-       the stage (resampled to the new scale). */
-    var toCanvas = {};
-    await Promise.all(toPages.map(function (n) {
-      var info = toInfos[toPages.indexOf(n)];
-      return renderPageCanvas(info, scale).then(function (c) { toCanvas[n] = c; });
-    }));
-    var stageCanvases = stageInnerEl.querySelectorAll('canvas');
-    async function canvasFor(pageNum, source) {
-      if (!pageNum) return null;
-      if (source === 'to') {
-        if (toCanvas[pageNum]) return toCanvas[pageNum];
-        var info = (await loadPageInfos([pageNum]))[0];
-        var c = await renderPageCanvas(info, scale);
-        toCanvas[pageNum] = c;
-        return c;
-      }
-      var idx = fromPages.indexOf(pageNum);
-      var src = stageCanvases[idx];
-      if (src) return cloneResampled(src, pw, ph);
-      var info2 = (await loadPageInfos([pageNum]))[0];
-      return renderPageCanvas(info2, scale);
-    }
-    var cardFront, cardBack, baseLeft, baseRight;
-    if (isNext) {
-      cardFront = await canvasFor(from.right, 'from');
-      cardBack = await canvasFor(to.left, 'to');
-      baseLeft = await canvasFor(from.left, 'from');
-      baseRight = await canvasFor(to.right, 'to');
-    } else {
-      cardFront = await canvasFor(to.right, 'to');
-      cardBack = await canvasFor(from.left, 'from');
-      baseLeft = await canvasFor(to.left, 'to');
-      baseRight = await canvasFor(from.right, 'from');
-    }
-    if (!cardFront || !cardBack) return false;
-    /* Overlay over the stage; the new view renders underneath it. */
-    var overlay = document.createElement('div');
-    overlay.className = 'flip-overlay';
-    overlay.style.left = rect.left + 'px';
-    overlay.style.top = rect.top + 'px';
-    overlay.style.width = SW + 'px';
-    overlay.style.height = SH + 'px';
-    function place(canvas, x) {
-      if (!canvas) return;
-      canvas.classList.remove('bg-white', 'shadow-md');
-      canvas.classList.add('flip-base-canvas');
-      canvas.style.left = x + 'px';
-      canvas.style.top = top + 'px';
-      canvas.style.width = pw + 'px';
-      canvas.style.height = ph + 'px';
-      canvas.style.marginLeft = '0';
-      overlay.appendChild(canvas);
-    }
-    place(baseLeft, CX - pw);
-    place(baseRight, CX);
-    var spine = document.createElement('div');
-    spine.className = 'flip-spine';
-    spine.style.left = (CX - 13) + 'px';
-    spine.style.top = top + 'px';
-    spine.style.height = ph + 'px';
-    overlay.appendChild(spine);
-    var card = document.createElement('div');
-    card.className = 'flip-card';
-    card.style.left = CX + 'px';
-    card.style.top = top + 'px';
-    card.style.width = pw + 'px';
-    card.style.height = ph + 'px';
-    cardFront.classList.remove('bg-white', 'shadow-md');
-    cardBack.classList.remove('bg-white', 'shadow-md');
-    cardFront.classList.add('flip-face');
-    cardBack.classList.add('flip-face', 'flip-back');
-    card.appendChild(cardFront);
-    card.appendChild(cardBack);
-    overlay.appendChild(card);
-    var stageRender = drawSpread();
-    document.body.appendChild(overlay);
+  /* ---- StPageFlip book (Magazine mode, same library + config as
+     Manuazine) ----
+     The book is built from page images (data URLs) rendered by PDF.js.
+     Pages render progressively: the current spread first, the rest in
+     the background; unrendered pages show a white placeholder so the
+     book can open before every page is ready. */
+
+  function placeholderImage() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 550;
+    canvas.height = Math.round(550 * pdfAspect);
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png');
+  }
+
+  async function renderPageImage(pageNum) {
+    if (pageRendered[pageNum - 1] || !pdf) return pageImages[pageNum - 1];
     try {
-      var startRot = isNext ? 0 : -180;
-      var endRot = isNext ? -180 : 0;
-      card.style.transform = cardTF(startRot);
-      void overlay.offsetWidth;
-      /* The label, slider and URL track the destination from the
-         moment the turn starts, not after it lands. */
-      updateChrome();
-      card.style.transform = cardTF(endRot);
-      await sleep(650);
-      /* Settle: when the new view is a single page, slide the card to
-         the centered position and fade out the old page it leaves. */
-      if (toPages.length === 1) {
-        var leaving = isNext ? baseLeft : baseRight;
-        if (leaving) leaving.style.opacity = '0';
-        card.style.transition = 'transform .15s ease';
-        card.style.transform = cardTF(endRot, -pw / 2);
-        await sleep(170);
-      }
-      await stageRender;
-    } finally {
-      overlay.remove();
+      var pg = await pdf.getPage(pageNum);
+      var vp = pg.getViewport({ scale: 1 });
+      var scale = Math.min(2, 1100 / vp.width);
+      var scaled = pg.getViewport({ scale: scale });
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(scaled.width);
+      canvas.height = Math.round(scaled.height);
+      await pg.render({ canvasContext: canvas.getContext('2d'), viewport: scaled }).promise;
+      pageImages[pageNum - 1] = canvas.toDataURL('image/png');
+      pageRendered[pageNum - 1] = true;
+      return pageImages[pageNum - 1];
+    } catch (err) {
+      return pageImages[pageNum - 1];
     }
-    return true;
+  }
+
+  async function renderAround(center) {
+    var order = [];
+    for (var d = 0; d <= 2; d++) {
+      if (center + d <= totalPages) order.push(center + d);
+      if (d > 0 && center - d >= 1) order.push(center - d);
+    }
+    for (var i = 0; i < order.length; i++) await renderPageImage(order[i]);
+    if (!allRendered) renderRestInBackground();
+  }
+
+  async function renderRestInBackground() {
+    if (restRendering || allRendered) return;
+    restRendering = true;
+    for (var i = 1; i <= totalPages; i++) {
+      if (!pageRendered[i - 1]) await renderPageImage(i);
+      await new Promise(function (r) { setTimeout(r, 0); });
+    }
+    if (!allRendered) {
+      allRendered = true;
+      if (pageFlip) {
+        try { pageFlip.updateFromImages(libraryImages()); } catch (e) {}
+      }
+    }
+    restRendering = false;
+  }
+
+  /* First and last page shown alone (cover / back cover), spreads in
+     between. StPageFlip's showCover does the first page alone, and the
+     last page alone only when the total is even. For an odd total we
+     insert one blank "inside cover" page after the cover (desktop
+     only); the mapping helpers translate between real PDF pages and
+     the library's image list. On mobile every page is already single
+     (portrait), so no blank is inserted. */
+  function libraryImages() {
+    if (!bookUsesBlank) return pageImages.slice();
+    if (!blankImage) blankImage = placeholderImage();
+    var out = pageImages.slice();
+    out.splice(1, 0, blankImage);
+    return out;
+  }
+  function libraryIndexForPage(realPage) {
+    if (!bookUsesBlank) return realPage - 1;
+    return realPage === 1 ? 0 : realPage;
+  }
+  function realPageForLibraryIndex(idx) {
+    if (!bookUsesBlank) return idx + 1;
+    if (idx === 0) return 1;
+    if (idx === 1) return 2;
+    return idx;
+  }
+
+  /* Hide the empty half of a single-page spread. The library always
+     draws a double-width book, so a cover spread is cover-on-the-right
+     + white-on-the-left, and a back-cover spread is back-on-the-left +
+     white-on-the-right. Clip the wrapper to one page wide and slide
+     the book inside it: cover -> right half only, back page -> left
+     half only. The wrapper stays centered, so the single page ends up
+     centered with no white half. */
+  function applyCoverMode() {
+    if (!bookWrapEl || !bookEl || !pageFlip || !bookIsDesktop || !bookSingleWidth) return;
+    var current = (currentPages()[0] || 1);
+    if (current === 1 && totalPages > 1) {
+      bookWrapEl.style.width = bookSingleWidth + 'px';
+      bookWrapEl.style.overflow = 'hidden';
+      bookEl.style.marginLeft = (-bookSingleWidth) + 'px';
+    } else if (current === totalPages && totalPages > 1) {
+      bookWrapEl.style.width = bookSingleWidth + 'px';
+      bookWrapEl.style.overflow = 'hidden';
+      bookEl.style.marginLeft = '0px';
+    } else {
+      bookWrapEl.style.width = (bookSingleWidth * 2) + 'px';
+      bookWrapEl.style.overflow = '';
+      bookEl.style.marginLeft = '0px';
+    }
+  }
+
+  function getPageFlipConstructor() {
+    if (window.St && window.St.PageFlip) return window.St.PageFlip;
+    if (window.StPageFlip && window.StPageFlip.PageFlip) return window.StPageFlip.PageFlip;
+    return null;
+  }
+
+  function stCurrentPage() {
+    if (!pageFlip) return (currentPages()[0] || 1);
+    try { return realPageForLibraryIndex(pageFlip.getCurrentPageIndex()); }
+    catch (e) { return (currentPages()[0] || 1); }
+  }
+
+  async function initStPageFlip() {
+    /* Already created: just swap in the rendered images. */
+    if (pageFlip) {
+      try { pageFlip.updateFromImages(libraryImages()); } catch (err) {}
+      applyCoverMode();
+      return;
+    }
+    var PageFlipCtor = getPageFlipConstructor();
+    if (!PageFlipCtor) {
+      showError('Page-flip library did not load. Reload the page.');
+      return;
+    }
+    /* Read the PDF's true page shape from page 1 so pages are not
+       stretched (an A4 page is 1.414, not 1.333). */
+    try {
+      var pg1 = await pdf.getPage(1);
+      var vp1 = pg1.getViewport({ scale: 1 });
+      if (vp1.width) pdfAspect = vp1.height / vp1.width;
+    } catch (e) {}
+    var isMobile = window.innerWidth < 768;
+    bookUsesBlank = !isMobile && totalPages > 1 && totalPages % 2 === 1;
+    var stageWidth = Math.min(1200, stageEl.clientWidth || 900);
+    var maxH = window.innerHeight - 260;
+    var singleWidth = isMobile
+      ? Math.min(stageWidth, window.innerWidth - 24)
+      : Math.floor(stageWidth / 2);
+    /* Fit the stage height too, so the whole page shows without
+       scrolling (the canvas modes cap by height the same way). */
+    var singleHeight = Math.round(singleWidth * pdfAspect);
+    if (singleHeight > maxH) {
+      singleHeight = maxH;
+      singleWidth = Math.round(singleHeight / pdfAspect);
+    }
+    singleWidth = Math.round(singleWidth * zoom);
+    singleHeight = Math.round(singleWidth * pdfAspect);
+    bookSingleWidth = singleWidth;
+    bookIsDesktop = !isMobile;
+    /* Render the current spread first so the book opens on real pages,
+       not placeholders; the rest render in the background. */
+    var start = (currentPages()[0] || 1);
+    await renderAround(start);
+    /* Make sure #book exists (destroy() removes it from the DOM). */
+    bookEl = document.getElementById('book');
+    if (!bookEl || !bookEl.isConnected) {
+      bookEl = document.createElement('div');
+      bookEl.id = 'book';
+      bookWrapEl.appendChild(bookEl);
+    }
+    bookEl.style.width = (isMobile ? singleWidth : singleWidth * 2) + 'px';
+    bookEl.style.height = singleHeight + 'px';
+    pageFlip = new PageFlipCtor(bookEl, {
+      width: singleWidth,
+      height: singleHeight,
+      size: 'fixed',
+      minWidth: 280,
+      maxWidth: 1200,
+      minHeight: 360,
+      maxHeight: 1400,
+      drawShadow: true,
+      flippingTime: 700,
+      usePortrait: isMobile,
+      startPage: 0,
+      autoSize: true,
+      showCover: true,
+      mobileScrollSupport: true,
+      swipeDistance: 30,
+      clickEventForward: true,
+      useMouseEvents: true,
+      showPageCorners: true,
+      disableFlipByClick: false
+    });
+    pageFlip.loadFromImages(libraryImages());
+    pageFlip.on('flip', function (e) {
+      /* The library reports a 0-based library index; translate to a
+         real PDF page (the blank inside-cover page is not a page). */
+      var realPage = realPageForLibraryIndex(e.data || 0);
+      viewIndex = viewForPage(realPage);
+      renderAround(realPage);
+      applyCoverMode();
+      updateChrome();
+    });
+    /* Start on the current page (deep link / mode switch). */
+    if (start > 1) {
+      try { pageFlip.turnToPage(libraryIndexForPage(start)); } catch (err) {}
+    }
+    applyCoverMode();
+  }
+
+  /* Rebuild the book at the current size (zoom / resize / mode switch).
+     Destroy is safe only here: destroy() removes the #book element, so
+     we immediately create a fresh one and build on that. */
+  function rebuildStPageFlip() {
+    if (!pageFlip) return;
+    var savedPage = stCurrentPage();
+    try { pageFlip.destroy(); } catch (err) {}
+    pageFlip = null;
+    var fresh = document.createElement('div');
+    fresh.id = 'book';
+    bookWrapEl.appendChild(fresh);
+    bookEl = fresh;
+    viewIndex = viewForPage(savedPage);
+    initStPageFlip();
   }
 
   /* Coverflow: every page rendered once at a fixed height, laid out
@@ -480,6 +568,12 @@
 
   function goToView(index, dir) {
     if (index < 0 || index >= views.length || index === viewIndex) return;
+    if (mode === 'magazine' && pageFlip) {
+      /* StPageFlip turns the book; its 'flip' event updates the view. */
+      var target = views[index][0];
+      try { pageFlip.turnToPage(libraryIndexForPage(target)); } catch (e) {}
+      return;
+    }
     var from = viewIndex;
     turnDir = dir || (index > viewIndex ? 'next' : 'prev');
     viewIndex = index;
@@ -512,6 +606,7 @@
     views = buildViews();
     viewIndex = viewForPage(page);
     turnDir = null;
+    if (nextMode === 'magazine' && pageFlip) rebuildStPageFlip();
     renderView();
   }
   modeSelect.addEventListener('change', function () { setMode(modeSelect.value); });
@@ -520,6 +615,11 @@
   function setZoom(nextZoom) {
     if (mode === 'coverflow') return;
     zoom = Math.min(3, Math.max(0.5, nextZoom));
+    if (mode === 'magazine') {
+      rebuildStPageFlip();
+      updateChrome();
+      return;
+    }
     renderView();
   }
   zoomOutBtn.addEventListener('click', function () { setZoom(zoom - 0.25); });
@@ -628,6 +728,7 @@
       var page = currentPages()[0] || 1;
       views = buildViews();
       viewIndex = viewForPage(page);
+      if (mode === 'magazine') { rebuildStPageFlip(); return; }
       renderView();
     }, 200);
   });
