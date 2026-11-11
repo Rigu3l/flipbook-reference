@@ -9,7 +9,7 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f4e" defer></script>
+  <script src="js/viewer.js?v=f4f" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     .flip-overlay { position: fixed; z-index: 40; background: #f1f5f9; }
@@ -18,6 +18,13 @@
     .flip-card { position: absolute; transform-origin: left center; transform-style: preserve-3d; transition: transform .6s ease-in-out; box-shadow: -12px 0 28px rgba(0,0,0,.20); }
     .flip-face { position: absolute; inset: 0; width: 100%; height: 100%; backface-visibility: hidden; background: #fff; }
     .flip-face.flip-back { transform: rotateY(180deg); }
+    /* Hover a turnable page: its outer edge lifts toward the viewer,
+       like the page starting to turn; pointer cursor, click turns it. */
+    #stage-inner canvas.page-turn-next, #stage-inner canvas.page-turn-prev { cursor: pointer; transition: transform .25s ease, box-shadow .25s ease; }
+    #stage-inner canvas.page-turn-next { transform-origin: left center; }
+    #stage-inner canvas.page-turn-next:hover { transform: perspective(3000px) rotateY(-18deg); box-shadow: -16px 8px 28px rgba(0,0,0,.25); }
+    #stage-inner canvas.page-turn-prev { transform-origin: right center; }
+    #stage-inner canvas.page-turn-prev:hover { transform: perspective(3000px) rotateY(18deg); box-shadow: 16px 8px 28px rgba(0,0,0,.25); }
     #stage-inner.slide-next { transform: translateX(-48px); opacity: .4; }
     #stage-inner.slide-prev { transform: translateX(48px); opacity: .4; }
     #stage-inner.fade-out { opacity: 0; }

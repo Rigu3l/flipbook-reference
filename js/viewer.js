@@ -206,6 +206,16 @@
     var scale = fitScaleFor(infos, pages.length) * zoom;
     for (var j = 0; j < infos.length; j++) {
       var canvas = await renderPageCanvas(infos[j], scale);
+      /* Hover hint + click to turn: a right (odd) page turns forward,
+         a left (even) page turns back — only when a view exists that way. */
+      var n = pages[j];
+      if (n % 2 === 1 && viewIndex < views.length - 1) {
+        canvas.classList.add('page-turn-next');
+        canvas.addEventListener('click', function () { goToView(viewIndex + 1, 'next'); });
+      } else if (n % 2 === 0 && viewIndex > 0) {
+        canvas.classList.add('page-turn-prev');
+        canvas.addEventListener('click', function () { goToView(viewIndex - 1, 'prev'); });
+      }
       stageInnerEl.appendChild(canvas);
     }
     /* The two pages of a spread meet at the spine — no gap between
