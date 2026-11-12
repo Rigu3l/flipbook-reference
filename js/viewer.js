@@ -204,6 +204,7 @@
     }
     if (sliderEl && design.controls.accent) sliderEl.style.accentColor = design.controls.accent;
     setupAudio();
+    preloadFlipSound();
   }
 
   /* ---- F10 Audio: background music (loop) + page-turn sound. ---- */
@@ -211,27 +212,58 @@
   var soundOn = false; /* user gesture required before any sound plays */
   var bgAudioEl = null;
   var flipCtx = null;
+  var flipBuffer = null; /* decoded page-turn MP3, ready before the first turn */
+  function getFlipCtx() {
+    if (!flipCtx) {
+      try { flipCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { flipCtx = null; }
+    }
+    return flipCtx;
+  }
+  /* Preload + decode the page-turn sound at viewer init, so the first
+     turn plays it instantly (no fetch/decode delay on the turn itself). */
+  function preloadFlipSound() {
+    var ctx = getFlipCtx();
+    if (!ctx) return;
+    fetch('js/vendor/page-turn.mp3').then(function (res) {
+      if (!res.ok) throw new Error('page-turn.mp3 HTTP ' + res.status);
+      return res.arrayBuffer();
+    }).then(function (buf) { return ctx.decodeAudioData(buf); }).then(function (decoded) {
+      flipBuffer = decoded;
+    }).catch(function () { flipBuffer = null; /* falls back to the synth flip */ });
+  }
   function playFlipSound() {
     if (!soundOn || design.flipSound === false) return;
     try {
-      if (!flipCtx) flipCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (flipCtx.state === 'suspended') flipCtx.resume();
+      var ctx = getFlipCtx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      if (flipBuffer) {
+        /* The MP3, decoded at init — starts the moment the turn does. */
+        var src = ctx.createBufferSource();
+        src.buffer = flipBuffer;
+        var gain = ctx.createGain();
+        gain.gain.value = 0.9;
+        src.connect(gain); gain.connect(ctx.destination);
+        src.start();
+        return;
+      }
+      /* Fallback (MP3 missing / not decoded yet): the old synth flip. */
       var dur = 0.15;
-      var buf = flipCtx.createBuffer(1, Math.floor(flipCtx.sampleRate * dur), flipCtx.sampleRate);
+      var buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
       var data = buf.getChannelData(0);
       for (var i = 0; i < data.length; i++) {
         data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
       }
-      var src = flipCtx.createBufferSource();
-      src.buffer = buf;
-      var filter = flipCtx.createBiquadFilter();
+      var s2 = ctx.createBufferSource();
+      s2.buffer = buf;
+      var filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
       filter.frequency.value = 1200;
       filter.Q.value = 1;
-      var gain = flipCtx.createGain();
-      gain.gain.value = 0.12;
-      src.connect(filter); filter.connect(gain); gain.connect(flipCtx.destination);
-      src.start();
+      var g2 = ctx.createGain();
+      g2.gain.value = 0.12;
+      s2.connect(filter); filter.connect(g2); g2.connect(ctx.destination);
+      s2.start();
     } catch (e) { /* audio is best-effort */ }
   }
   function setupAudio() {
