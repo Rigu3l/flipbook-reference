@@ -25,6 +25,7 @@
   function defaults() {
     return {
       subtitle: '', description: '', showTitles: true,
+      toc: [],
       background: {
         type: 'color', color: '#f1f5f9', gradient: '',
         imagePath: '', size: 'cover', position: 'center',
@@ -33,7 +34,8 @@
       controls: {
         show: { fullscreen: true, zoom: true, prevNext: true,
                 thumbnails: true, firstPage: true, lastPage: true,
-                share: true, download: true, print: true },
+                share: true, download: true, print: true,
+                toc: true, search: true, bookmarks: true },
         size: 'medium', accent: '#059669'
       }
     };
@@ -42,6 +44,59 @@
 
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+  /* ---- F7 Table of contents items (title + page). ---- */
+  function renderTocItems() {
+    var box = $('#toc-items');
+    box.innerHTML = '';
+    var items = Array.isArray(design.toc) ? design.toc : [];
+    if (!items.length) {
+      box.innerHTML = '<p class="text-sm text-slate-500">No index items yet.</p>';
+      return;
+    }
+    items.forEach(function (item, i) {
+      var row = document.createElement('div');
+      row.className = 'flex items-center gap-2';
+      var title = document.createElement('input');
+      title.type = 'text';
+      title.placeholder = 'Title';
+      title.value = item.title || '';
+      title.className = 'toc-title min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm';
+      title.dataset.idx = String(i);
+      var page = document.createElement('input');
+      page.type = 'number';
+      page.min = '1';
+      page.placeholder = 'Page';
+      page.value = String(item.page || 1);
+      page.className = 'toc-page w-20 shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm';
+      page.dataset.idx = String(i);
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'shrink-0 rounded-lg px-2 py-1 text-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600';
+      del.textContent = '×';
+      del.setAttribute('aria-label', 'Remove index item');
+      del.addEventListener('click', function () {
+        collectToc();
+        design.toc.splice(i, 1);
+        renderTocItems();
+      });
+      row.appendChild(title);
+      row.appendChild(page);
+      row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+  function collectToc() {
+    var items = [];
+    $$('#toc-items .toc-title').forEach(function (titleEl) {
+      var i = parseInt(titleEl.dataset.idx, 10);
+      var pageEl = document.querySelector('#toc-items .toc-page[data-idx="' + i + '"]');
+      var page = pageEl ? (parseInt(pageEl.value, 10) || 1) : 1;
+      var title = titleEl.value.trim();
+      if (title) items.push({ title: title, page: page });
+    });
+    design.toc = items;
+  }
 
   function showError(msg) {
     var el = $('#design-error');
@@ -60,6 +115,7 @@
     design.subtitle = $('#d-subtitle').value.trim();
     design.description = $('#d-description').value.trim();
     design.showTitles = $('#d-show-titles').checked;
+    collectToc();
     var bg = design.background;
     bg.type = currentBgType();
     bg.color = $('#d-bg-color').value;
@@ -126,6 +182,7 @@
     $('#d-subtitle').value = design.subtitle || '';
     $('#d-description').value = design.description || '';
     $('#d-show-titles').checked = design.showTitles !== false;
+    renderTocItems();
     var bg = design.background;
     $('#d-bg-color').value = bg.color || '#f1f5f9';
     $('#d-bg-size').value = bg.size || 'cover';
@@ -291,6 +348,14 @@
     updatePreview();
   });
   $('#design-form').addEventListener('submit', save);
+  $('#toc-add').addEventListener('click', function () {
+    collectToc();
+    if (!Array.isArray(design.toc)) design.toc = [];
+    design.toc.push({ title: '', page: 1 });
+    renderTocItems();
+    var last = document.querySelector('#toc-items .toc-title:last-of-type');
+    if (last) last.focus();
+  });
 
   document.addEventListener('DOMContentLoaded', load);
 })();

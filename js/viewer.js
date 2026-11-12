@@ -57,6 +57,16 @@
   var thumbsBtn = document.getElementById('btn-thumbs');
   var thumbsPanel = document.getElementById('thumbs-panel');
   var thumbsList = document.getElementById('thumbs-list');
+  var tocBtn = document.getElementById('btn-toc');
+  var tocPanel = document.getElementById('toc-panel');
+  var tocList = document.getElementById('toc-list');
+  var bookmarksList = document.getElementById('bookmarks-list');
+  var searchBtn = document.getElementById('btn-search');
+  var searchPanel = document.getElementById('search-panel');
+  var searchInput = document.getElementById('search-input');
+  var searchResults = document.getElementById('search-results');
+  var searchStatus = document.getElementById('search-status');
+  var bookmarkBtn = document.getElementById('btn-bookmark');
   var zoomOutBtn = document.getElementById('btn-zoom-out');
   var zoomInBtn = document.getElementById('btn-zoom-in');
   var zoomFitBtn = document.getElementById('btn-zoom-fit');
@@ -77,6 +87,7 @@
   function designDefaults() {
     return {
       subtitle: '', description: '', showTitles: true,
+      toc: [],
       background: {
         type: 'color', color: '#f1f5f9', gradient: '',
         imagePath: '', size: 'cover', position: 'center',
@@ -85,7 +96,8 @@
       controls: {
         show: { fullscreen: true, zoom: true, prevNext: true,
                 thumbnails: true, firstPage: true, lastPage: true,
-                share: true, download: true, print: true },
+                share: true, download: true, print: true,
+                toc: true, search: true, bookmarks: true },
         size: 'medium', accent: '#059669'
       }
     };
@@ -108,6 +120,7 @@
         design.subtitle = saved.subtitle || '';
         design.description = saved.description || '';
         if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
+        if (Array.isArray(saved.toc)) design.toc = saved.toc;
         if (saved.background) Object.assign(design.background, saved.background);
         if (saved.controls) {
           if (saved.controls.show) Object.assign(design.controls.show, saved.controls.show);
@@ -162,6 +175,9 @@
     if (zoomFitBtn) zoomFitBtn.classList.toggle('hidden', !zoomVisible);
     if (zoomLabel) zoomLabel.classList.toggle('hidden', !zoomVisible);
     if (thumbsBtn) thumbsBtn.classList.toggle('hidden', !show.thumbnails);
+    if (tocBtn) tocBtn.classList.toggle('hidden', show.toc === false);
+    if (searchBtn) searchBtn.classList.toggle('hidden', show.search === false);
+    if (bookmarkBtn) bookmarkBtn.classList.toggle('hidden', show.bookmarks === false);
     if (prevBtn) prevBtn.classList.toggle('hidden', !show.prevNext);
     if (nextBtn) nextBtn.classList.toggle('hidden', !show.prevNext);
     if (firstBtn) firstBtn.classList.toggle('hidden', !show.firstPage);
@@ -701,6 +717,7 @@
     if (window.location.hash !== hash) history.replaceState(null, '', hash);
     document.title = (book ? book.title + ' — ' : '') + 'Flipbook Reference';
     highlightThumb();
+    updateBookmarkBtn();
   }
 
   function goToView(index, dir) {
@@ -793,11 +810,16 @@
   });
 
   /* ---- Thumbnails ---- */
+  function closeThumbs() {
+    thumbsOpen = false;
+    if (thumbsBtn) thumbsBtn.setAttribute('aria-expanded', 'false');
+    thumbsPanel.classList.add('hidden');
+  }
   function toggleThumbs() {
     thumbsOpen = !thumbsOpen;
     thumbsBtn.setAttribute('aria-expanded', String(thumbsOpen));
     thumbsPanel.classList.toggle('hidden', !thumbsOpen);
-    if (thumbsOpen) renderThumbs();
+    if (thumbsOpen) { renderThumbs(); if (tocOpen) toggleToc(false); }
   }
   thumbsBtn.addEventListener('click', toggleThumbs);
 
@@ -1081,6 +1103,175 @@
     copyText(buildEmbedCode(), document.getElementById('embed-status'), 'Embed code copied.');
   });
   document.getElementById('share-print-btn').addEventListener('click', printBook);
+
+  /* ---- F7 TOC (index list), bookmarks, in-book search. ---- */
+  var tocOpen = false;
+  var searchOpen = false;
+  var pageTextCache = {};
+  var tocTab = 'contents';
+
+  function bookmarkKey() { return 'fb-bookmarks-' + (book ? book.id : ''); }
+  function loadBookmarks() {
+    try { return JSON.parse(localStorage.getItem(bookmarkKey()) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveBookmarks(list) {
+    try { localStorage.setItem(bookmarkKey(), JSON.stringify(list)); } catch (e) {}
+  }
+  function updateBookmarkBtn() {
+    if (!bookmarkBtn) return;
+    var on = loadBookmarks().indexOf(currentPages()[0] || 1) !== -1;
+    bookmarkBtn.setAttribute('aria-pressed', String(on));
+    bookmarkBtn.classList.toggle('bg-amber-100', on);
+    bookmarkBtn.classList.toggle('border-amber-400', on);
+  }
+  function renderToc() {
+    var items = (design && Array.isArray(design.toc)) ? design.toc : [];
+    tocList.innerHTML = '';
+    if (!items.length) {
+      tocList.innerHTML = '<p class="text-sm text-slate-500">No contents yet. The owner can add index items from the Design panel.</p>';
+      return;
+    }
+    items.slice().sort(function (a, b) { return (a.page || 1) - (b.page || 1); }).forEach(function (item) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100';
+      var title = document.createElement('span');
+      title.className = 'min-w-0 flex-1 truncate';
+      title.textContent = item.title || ('Page ' + item.page);
+      var pg = document.createElement('span');
+      pg.className = 'shrink-0 text-xs text-slate-400';
+      pg.textContent = 'p. ' + item.page;
+      btn.appendChild(title);
+      btn.appendChild(pg);
+      btn.addEventListener('click', function () { goToPage(item.page || 1); toggleToc(false); });
+      tocList.appendChild(btn);
+    });
+  }
+  function renderBookmarks() {
+    var list = loadBookmarks().slice().sort(function (a, b) { return a - b; });
+    bookmarksList.innerHTML = '';
+    if (!list.length) {
+      bookmarksList.innerHTML = '<p class="text-sm text-slate-500">No bookmarks yet. Tap Bookmark on any page to save it here.</p>';
+      return;
+    }
+    list.forEach(function (pageNum) {
+      var row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'min-w-0 flex-1 truncate text-left';
+      btn.textContent = 'Page ' + pageNum;
+      btn.addEventListener('click', function () { goToPage(pageNum); toggleToc(false); });
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'shrink-0 rounded px-2 py-0.5 text-slate-400 hover:bg-slate-200 hover:text-slate-600';
+      del.textContent = '×';
+      del.setAttribute('aria-label', 'Remove bookmark for page ' + pageNum);
+      del.addEventListener('click', function () {
+        saveBookmarks(loadBookmarks().filter(function (n) { return n !== pageNum; }));
+        renderBookmarks();
+        updateBookmarkBtn();
+      });
+      row.appendChild(btn);
+      row.appendChild(del);
+      bookmarksList.appendChild(row);
+    });
+  }
+  function setTocTab(tab) {
+    tocTab = tab;
+    document.getElementById('toc-tab-contents').classList.toggle('bg-emerald-600', tab === 'contents');
+    document.getElementById('toc-tab-contents').classList.toggle('text-white', tab === 'contents');
+    document.getElementById('toc-tab-bookmarks').classList.toggle('bg-emerald-600', tab === 'bookmarks');
+    document.getElementById('toc-tab-bookmarks').classList.toggle('text-white', tab === 'bookmarks');
+    tocList.classList.toggle('hidden', tab !== 'contents');
+    bookmarksList.classList.toggle('hidden', tab !== 'bookmarks');
+    if (tab === 'contents') renderToc(); else renderBookmarks();
+  }
+  function toggleToc(force) {
+    tocOpen = (typeof force === 'boolean') ? force : !tocOpen;
+    if (tocBtn) tocBtn.setAttribute('aria-expanded', String(tocOpen));
+    tocPanel.classList.toggle('hidden', !tocOpen);
+    if (tocOpen) { setTocTab(tocTab); closeThumbs(); }
+  }
+  function toggleBookmark() {
+    var pageNum = currentPages()[0] || 1;
+    var list = loadBookmarks();
+    var idx = list.indexOf(pageNum);
+    if (idx === -1) list.push(pageNum); else list.splice(idx, 1);
+    saveBookmarks(list);
+    updateBookmarkBtn();
+    showToast(idx === -1 ? 'Bookmarked page ' + pageNum + '.' : 'Bookmark removed.', 'success');
+  }
+  async function pageText(pageNum) {
+    if (pageTextCache[pageNum]) return pageTextCache[pageNum];
+    var pg = await pdf.getPage(pageNum);
+    var tc = await pg.getTextContent();
+    var text = tc.items.map(function (it) { return it.str; }).join(' ');
+    pageTextCache[pageNum] = text;
+    return text;
+  }
+  var searchTimer = null;
+  function runSearch(query) {
+    clearTimeout(searchTimer);
+    var q = (query || '').trim();
+    searchResults.innerHTML = '';
+    if (!q) { searchStatus.textContent = ''; return; }
+    searchStatus.textContent = 'Searching…';
+    searchTimer = setTimeout(async function () {
+      var lower = q.toLowerCase();
+      var hits = [];
+      for (var n = 1; n <= totalPages; n++) {
+        try {
+          var text = await pageText(n);
+          var idx = text.toLowerCase().indexOf(lower);
+          if (idx !== -1) {
+            var start = Math.max(0, idx - 40);
+            var end = Math.min(text.length, idx + q.length + 60);
+            hits.push({ page: n, snippet: (start > 0 ? '…' : '') + text.slice(start, end) + (end < text.length ? '…' : '') });
+          }
+        } catch (e) { /* skip a page that fails */ }
+      }
+      searchResults.innerHTML = '';
+      if (!hits.length) {
+        searchStatus.textContent = 'No matches for "' + q + '".';
+        return;
+      }
+      searchStatus.textContent = hits.length + (hits.length === 1 ? ' match' : ' matches') + ' for "' + q + '".';
+      hits.forEach(function (hit) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'rounded-lg border border-slate-200 px-3 py-2 text-left hover:border-emerald-500';
+        var pg = document.createElement('span');
+        pg.className = 'block text-xs font-semibold text-emerald-700';
+        pg.textContent = 'Page ' + hit.page;
+        var sn = document.createElement('span');
+        sn.className = 'mt-0.5 block text-sm text-slate-600';
+        sn.textContent = hit.snippet;
+        btn.appendChild(pg);
+        btn.appendChild(sn);
+        btn.addEventListener('click', function () { goToPage(hit.page); toggleSearch(false); });
+        searchResults.appendChild(btn);
+      });
+    }, 300);
+  }
+  function toggleSearch(force) {
+    searchOpen = (typeof force === 'boolean') ? force : !searchOpen;
+    if (searchBtn) searchBtn.setAttribute('aria-expanded', String(searchOpen));
+    searchPanel.classList.toggle('hidden', !searchOpen);
+    if (searchOpen) searchInput.focus();
+  }
+  if (tocBtn) tocBtn.addEventListener('click', function () { toggleToc(); });
+  document.getElementById('toc-tab-contents').addEventListener('click', function () { setTocTab('contents'); });
+  document.getElementById('toc-tab-bookmarks').addEventListener('click', function () { setTocTab('bookmarks'); });
+  if (bookmarkBtn) bookmarkBtn.addEventListener('click', toggleBookmark);
+  if (searchBtn) searchBtn.addEventListener('click', function () { toggleSearch(); });
+  document.getElementById('search-close').addEventListener('click', function () { toggleSearch(false); });
+  searchInput.addEventListener('input', function () { runSearch(searchInput.value); });
+  searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && searchResults.firstChild) searchResults.firstChild.click();
+    if (e.key === 'Escape') toggleSearch(false);
+  });
 
   async function loadBook() {
     if (!id) { showError('No flipbook selected.'); return; }

@@ -11,7 +11,7 @@
   <script src="js/vendor/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f6" defer></script>
+  <script src="js/viewer.js?v=f7" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
@@ -56,6 +56,9 @@
         <option value="onepage">One page</option>
       </select>
       <button id="btn-thumbs" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100" aria-expanded="false">Thumbnails</button>
+      <button id="btn-toc" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100" aria-expanded="false">Contents</button>
+      <button id="btn-search" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100" aria-expanded="false">Search</button>
+      <button id="btn-bookmark" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100" aria-pressed="false" title="Bookmark this page">Bookmark</button>
       <span class="mx-1 hidden h-6 w-px bg-slate-200 sm:block"></span>
       <button id="btn-zoom-out" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-40" aria-label="Zoom out">&minus;</button>
       <span id="zoom-label" class="w-12 text-center text-sm text-slate-600">100%</span>
@@ -166,6 +169,26 @@
     <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Pages</p>
     <div id="thumbs-list" class="flex flex-col gap-3"></div>
   </aside>
+
+  <!-- Table of contents / bookmarks panel -->
+  <aside id="toc-panel" class="fixed bottom-0 left-0 top-[105px] z-30 hidden w-72 overflow-y-auto border-r border-slate-200 bg-white p-3 shadow-lg" aria-label="Table of contents and bookmarks">
+    <div class="mb-3 flex gap-1 border-b border-slate-200 pb-2">
+      <button id="toc-tab-contents" type="button" class="toc-tab rounded-lg px-3 py-1.5 text-sm font-medium">Contents</button>
+      <button id="toc-tab-bookmarks" type="button" class="toc-tab rounded-lg px-3 py-1.5 text-sm font-medium">Bookmarks</button>
+    </div>
+    <div id="toc-list" class="flex flex-col gap-1"></div>
+    <div id="bookmarks-list" class="hidden flex flex-col gap-1"></div>
+  </aside>
+
+  <!-- In-book search panel -->
+  <div id="search-panel" class="fixed left-1/2 top-[105px] z-30 hidden w-full max-w-md -translate-x-1/2 rounded-xl border border-slate-200 bg-white p-4 shadow-xl" role="search">
+    <div class="flex gap-2">
+      <input id="search-input" type="search" placeholder="Search in this flipbook…" class="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm" aria-label="Search in this flipbook">
+      <button id="search-close" type="button" class="rounded-lg px-2 py-1 text-lg text-slate-500 hover:bg-slate-100" aria-label="Close search">&times;</button>
+    </div>
+    <p id="search-status" class="mt-2 text-sm text-slate-500"></p>
+    <div id="search-results" class="mt-2 flex max-h-72 flex-col gap-1 overflow-y-auto"></div>
+  </div>
 
   <main class="relative mx-auto flex max-w-6xl flex-col items-center px-4 py-6">
     <div id="bg-layer" class="pointer-events-none absolute inset-0 hidden" aria-hidden="true"></div>
