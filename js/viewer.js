@@ -1201,6 +1201,7 @@
     if (idx === -1) list.push(pageNum); else list.splice(idx, 1);
     saveBookmarks(list);
     updateBookmarkBtn();
+    if (tocOpen && tocTab === 'bookmarks') renderBookmarks();
     showToast(idx === -1 ? 'Bookmarked page ' + pageNum + '.' : 'Bookmark removed.', 'success');
   }
   async function pageText(pageNum) {
