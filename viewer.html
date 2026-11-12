@@ -8,9 +8,10 @@
   <script src="js/vendor/supabase.min.js"></script>
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/vendor/page-flip.browser.js"></script>
+  <script src="js/vendor/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f5" defer></script>
+  <script src="js/viewer.js?v=f6" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
@@ -62,6 +63,101 @@
       <button id="btn-zoom-fit" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Fit</button>
       <span class="mx-1 hidden h-6 w-px bg-slate-200 sm:block"></span>
       <button id="btn-fullscreen" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Fullscreen</button>
+      <button id="btn-share" type="button" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700">Share</button>
+    </div>
+  </div>
+
+  <!-- Share dialog -->
+  <div id="share-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label="Share this flipbook">
+    <div class="w-full max-w-lg rounded-xl bg-white shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+        <h2 class="font-semibold">Share this flipbook</h2>
+        <button id="share-close" type="button" class="rounded-lg px-2 py-1 text-lg text-slate-500 hover:bg-slate-100" aria-label="Close">&times;</button>
+      </div>
+      <div id="share-tabs" class="flex flex-wrap gap-1 border-b border-slate-200 px-3 py-2" role="tablist">
+        <button type="button" data-sharetab="link" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">Link</button>
+        <button type="button" data-sharetab="embed" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">Embed</button>
+        <button type="button" data-sharetab="download" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">Download</button>
+        <button type="button" data-sharetab="print" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">Print</button>
+        <button type="button" data-sharetab="qr" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">QR code</button>
+        <button type="button" data-sharetab="email" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">Email</button>
+        <button type="button" data-sharetab="social" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">Social</button>
+        <button type="button" data-sharetab="image" class="share-tab rounded-lg px-3 py-1.5 text-sm font-medium">Image</button>
+      </div>
+      <div class="max-h-[60vh] overflow-y-auto px-5 py-4">
+        <div id="share-pane-link" class="share-pane">
+          <p class="text-sm text-slate-600">Anyone with this link can read the flipbook.</p>
+          <div class="mt-3 flex gap-2">
+            <input id="share-link-input" type="text" readonly class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <button id="share-link-copy" type="button" class="shrink-0 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Copy</button>
+          </div>
+          <p id="share-link-status" class="mt-2 text-sm text-emerald-700"></p>
+        </div>
+        <div id="share-pane-embed" class="share-pane hidden">
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div>
+              <label for="embed-width" class="block text-sm font-medium text-slate-700">Width</label>
+              <input id="embed-width" type="number" value="330" min="200" max="1200" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+            </div>
+            <div>
+              <label for="embed-height" class="block text-sm font-medium text-slate-700">Height</label>
+              <input id="embed-height" type="number" value="400" min="200" max="1200" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+            </div>
+            <div class="flex items-end pb-1">
+              <label class="flex items-center gap-2 text-sm text-slate-700"><input id="embed-responsive" type="checkbox" class="accent-emerald-600"> Responsive</label>
+            </div>
+            <div class="flex items-end pb-1">
+              <label class="flex items-center gap-2 text-sm text-slate-700"><input id="embed-border" type="checkbox" checked class="accent-emerald-600"> Border</label>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label for="embed-open-page" class="block text-sm font-medium text-slate-700">Open in</label>
+            <select id="embed-open-page" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm">
+              <option value="1">First page</option>
+            </select>
+          </div>
+          <textarea id="embed-code" readonly rows="4" class="mt-3 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700"></textarea>
+          <button id="embed-copy" type="button" class="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Copy embed code</button>
+          <p id="embed-status" class="mt-2 text-sm text-emerald-700"></p>
+        </div>
+        <div id="share-pane-download" class="share-pane hidden">
+          <p class="text-sm text-slate-600">Download the original PDF file.</p>
+          <a id="share-download-btn" href="#" download class="mt-3 inline-block rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">Download PDF</a>
+        </div>
+        <div id="share-pane-print" class="share-pane hidden">
+          <p class="text-sm text-slate-600">Print the pages of this flipbook.</p>
+          <button id="share-print-btn" type="button" class="mt-3 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">Print</button>
+        </div>
+        <div id="share-pane-qr" class="share-pane hidden">
+          <p class="text-sm text-slate-600">Scan this code to open the flipbook on a phone.</p>
+          <div id="share-qr" class="mt-3 flex justify-center"></div>
+          <div class="mt-3 text-center">
+            <a id="share-qr-download" href="#" download="flipbook-qr.png" class="inline-block rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">Download QR code</a>
+          </div>
+        </div>
+        <div id="share-pane-email" class="share-pane hidden">
+          <p class="text-sm text-slate-600">Send the flipbook link by email.</p>
+          <a id="share-email-btn" href="#" class="mt-3 inline-block rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">Email this flipbook</a>
+        </div>
+        <div id="share-pane-social" class="share-pane hidden">
+          <p class="text-sm text-slate-600">Share the flipbook on social media.</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <a id="share-fb" href="#" target="_blank" rel="noopener" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Facebook</a>
+            <a id="share-x" href="#" target="_blank" rel="noopener" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">X</a>
+            <a id="share-linkedin" href="#" target="_blank" rel="noopener" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">LinkedIn</a>
+            <a id="share-whatsapp" href="#" target="_blank" rel="noopener" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">WhatsApp</a>
+          </div>
+        </div>
+        <div id="share-pane-image" class="share-pane hidden">
+          <p class="text-sm text-slate-600">Download the cover as an image.</p>
+          <div class="mt-3 flex justify-center">
+            <img id="share-cover-img" alt="Flipbook cover" class="max-h-64 rounded border border-slate-200 shadow-sm">
+          </div>
+          <div class="mt-3 text-center">
+            <a id="share-cover-download" href="#" download class="inline-block rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700">Download cover image</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

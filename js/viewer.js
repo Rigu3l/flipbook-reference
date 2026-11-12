@@ -62,6 +62,7 @@
   var zoomFitBtn = document.getElementById('btn-zoom-fit');
   var zoomLabel = document.getElementById('zoom-label');
   var fullscreenBtn = document.getElementById('btn-fullscreen');
+  var shareBtn = document.getElementById('btn-share');
   var modeSelect = document.getElementById('mode-select');
   var bgLayerEl = document.getElementById('bg-layer');
   var bookMetaEl = document.getElementById('book-meta');
@@ -83,7 +84,8 @@
       },
       controls: {
         show: { fullscreen: true, zoom: true, prevNext: true,
-                thumbnails: true, firstPage: true, lastPage: true },
+                thumbnails: true, firstPage: true, lastPage: true,
+                share: true, download: true, print: true },
         size: 'medium', accent: '#059669'
       }
     };
@@ -149,6 +151,11 @@
     }
     /* Controls show / hide. */
     if (fullscreenBtn) fullscreenBtn.classList.toggle('hidden', !show.fullscreen);
+    if (shareBtn) shareBtn.classList.toggle('hidden', show.share === false);
+    var downloadTab = document.querySelector('[data-sharetab="download"]');
+    if (downloadTab) downloadTab.classList.toggle('hidden', show.download === false);
+    var printTab = document.querySelector('[data-sharetab="print"]');
+    if (printTab) printTab.classList.toggle('hidden', show.print === false);
     var zoomVisible = show.zoom;
     if (zoomOutBtn) zoomOutBtn.classList.toggle('hidden', !zoomVisible);
     if (zoomInBtn) zoomInBtn.classList.toggle('hidden', !zoomVisible);
@@ -895,6 +902,185 @@
   }
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', function () { dragState.active = false; });
+
+  /* ---- F6 Share dialog: Link, Embed, Download, Print, QR code,
+     Email, Social, Image (cover). ---- */
+  var shareModal = document.getElementById('share-modal');
+  var shareTabBtns = Array.prototype.slice.call(document.querySelectorAll('.share-tab'));
+  var sharePanes = Array.prototype.slice.call(document.querySelectorAll('.share-pane'));
+
+  function viewerUrl(page) {
+    var base = window.location.href.split('#')[0];
+    return base + '#page/' + (page || (currentPages()[0] || 1));
+  }
+  function copyText(text, statusEl, msg) {
+    function done() { if (statusEl) statusEl.textContent = msg || 'Copied.'; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); done(); });
+    } else { fallbackCopy(text); done(); }
+  }
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+  }
+  function setShareTab(name) {
+    shareTabBtns.forEach(function (b) {
+      var on = b.dataset.sharetab === name;
+      b.classList.toggle('bg-emerald-600', on);
+      b.classList.toggle('text-white', on);
+      b.classList.toggle('text-slate-700', !on);
+    });
+    sharePanes.forEach(function (p) {
+      p.classList.toggle('hidden', p.id !== 'share-pane-' + name);
+    });
+    if (name === 'qr') renderQr();
+    if (name === 'image') renderCoverImage();
+    if (name === 'embed') buildEmbedCode();
+  }
+  function buildEmbedCode() {
+    var w = parseInt(document.getElementById('embed-width').value, 10) || 330;
+    var h = parseInt(document.getElementById('embed-height').value, 10) || 400;
+    var responsive = document.getElementById('embed-responsive').checked;
+    var border = document.getElementById('embed-border').checked;
+    var openPage = parseInt(document.getElementById('embed-open-page').value, 10) || 1;
+    var url = viewerUrl(openPage);
+    var style = (responsive ? 'width:100%;' : 'width:' + w + 'px;') +
+      'height:' + h + 'px;' + (border ? 'border:1px solid #ddd;' : 'border:0;');
+    var code = '<iframe src="' + url + '" width="' + (responsive ? '100%' : w) +
+      '" height="' + h + '" style="' + style + '" frameborder="0" allowfullscreen></iframe>';
+    document.getElementById('embed-code').value = code;
+    return code;
+  }
+  function renderQr() {
+    var box = document.getElementById('share-qr');
+    if (!box || !window.qrcode) return;
+    try {
+      var qr = window.qrcode(0, 'M');
+      qr.addData(viewerUrl(1));
+      qr.make();
+      var dataUrl = qr.createDataURL(6, 8);
+      box.innerHTML = '';
+      var img = document.createElement('img');
+      img.src = dataUrl;
+      img.alt = 'QR code for this flipbook';
+      img.className = 'h-48 w-48';
+      box.appendChild(img);
+      var dl = document.getElementById('share-qr-download');
+      if (dl) dl.href = dataUrl;
+    } catch (e) { box.textContent = 'Could not generate the QR code.'; }
+  }
+  async function renderCoverImage() {
+    var img = document.getElementById('share-cover-img');
+    var dl = document.getElementById('share-cover-download');
+    if (!img || !pdf) return;
+    try {
+      var pg = await pdf.getPage(1);
+      var vp = pg.getViewport({ scale: 1 });
+      var scale = Math.min(2, 600 / vp.width);
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.round(vp.width * scale);
+      canvas.height = Math.round(vp.height * scale);
+      await pg.render({ canvasContext: canvas.getContext('2d'), viewport: pg.getViewport({ scale: scale }) }).promise;
+      var dataUrl = canvas.toDataURL('image/png');
+      img.src = dataUrl;
+      if (dl) { dl.href = dataUrl; dl.download = (book ? book.title : 'flipbook') + '-cover.png'; }
+    } catch (e) { /* leave the placeholder */ }
+  }
+  async function printBook() {
+    if (!pdf) return;
+    var pages = currentPages();
+    var win = window.open('', '_blank');
+    if (!win) { showToast('Allow pop-ups to print.', 'error'); return; }
+    win.document.write('<html><head><title>' + escapeHtml(book ? book.title : 'Flipbook') +
+      '</title><style>body{margin:0}img{width:100%;page-break-after:always;display:block}</style></head><body></body></html>');
+    win.document.close();
+    for (var i = 0; i < pages.length; i++) {
+      try {
+        var pg = await pdf.getPage(pages[i]);
+        var vp = pg.getViewport({ scale: 1 });
+        var scale = Math.min(2, 1000 / vp.width);
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(vp.width * scale);
+        canvas.height = Math.round(vp.height * scale);
+        await pg.render({ canvasContext: canvas.getContext('2d'), viewport: pg.getViewport({ scale: scale }) }).promise;
+        var img = win.document.createElement('img');
+        img.src = canvas.toDataURL('image/png');
+        win.document.body.appendChild(img);
+      } catch (e) { /* skip a page that fails to render */ }
+    }
+    win.focus();
+    setTimeout(function () { win.print(); }, 300);
+  }
+  function openShare() {
+    if (!book) return;
+    var url = viewerUrl(1);
+    document.getElementById('share-link-input').value = url;
+    document.getElementById('share-link-status').textContent = '';
+    document.getElementById('embed-status').textContent = '';
+    /* Embed "Open in" page list. */
+    var sel = document.getElementById('embed-open-page');
+    sel.innerHTML = '';
+    for (var n = 1; n <= totalPages; n++) {
+      var opt = document.createElement('option');
+      opt.value = String(n);
+      opt.textContent = n === 1 ? 'First page' : 'Page ' + n;
+      sel.appendChild(opt);
+    }
+    sel.value = String(currentPages()[0] || 1);
+    /* Download (original PDF). */
+    var dl = document.getElementById('share-download-btn');
+    dl.href = window.publicPdfUrl(book.file_path);
+    dl.download = (book.title || 'flipbook') + '.pdf';
+    /* Email + social. */
+    var encUrl = encodeURIComponent(url);
+    var encTitle = encodeURIComponent(book.title || 'Flipbook');
+    document.getElementById('share-email-btn').href =
+      'mailto:?subject=' + encTitle + '&body=' + encUrl;
+    document.getElementById('share-fb').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encUrl;
+    document.getElementById('share-x').href = 'https://twitter.com/intent/tweet?url=' + encUrl + '&text=' + encTitle;
+    document.getElementById('share-linkedin').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encUrl;
+    document.getElementById('share-whatsapp').href = 'https://wa.me/?text=' + encTitle + '%20' + encUrl;
+    buildEmbedCode();
+    /* Default to the first visible tab. */
+    var firstVisible = shareTabBtns.find(function (b) { return !b.classList.contains('hidden'); });
+    setShareTab(firstVisible ? firstVisible.dataset.sharetab : 'link');
+    shareModal.classList.remove('hidden');
+    shareModal.classList.add('flex');
+  }
+  function closeShare() {
+    shareModal.classList.add('hidden');
+    shareModal.classList.remove('flex');
+  }
+  if (shareBtn) shareBtn.addEventListener('click', openShare);
+  var shareClose = document.getElementById('share-close');
+  if (shareClose) shareClose.addEventListener('click', closeShare);
+  shareModal.addEventListener('click', function (e) { if (e.target === shareModal) closeShare(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !shareModal.classList.contains('hidden')) closeShare();
+  });
+  shareTabBtns.forEach(function (b) {
+    b.addEventListener('click', function () { setShareTab(b.dataset.sharetab); });
+  });
+  document.getElementById('share-link-copy').addEventListener('click', function () {
+    copyText(document.getElementById('share-link-input').value,
+      document.getElementById('share-link-status'), 'Link copied.');
+  });
+  ['embed-width', 'embed-height', 'embed-open-page'].forEach(function (idName) {
+    document.getElementById(idName).addEventListener('input', buildEmbedCode);
+    document.getElementById(idName).addEventListener('change', buildEmbedCode);
+  });
+  ['embed-responsive', 'embed-border'].forEach(function (idName) {
+    document.getElementById(idName).addEventListener('change', buildEmbedCode);
+  });
+  document.getElementById('embed-copy').addEventListener('click', function () {
+    copyText(buildEmbedCode(), document.getElementById('embed-status'), 'Embed code copied.');
+  });
+  document.getElementById('share-print-btn').addEventListener('click', printBook);
 
   async function loadBook() {
     if (!id) { showError('No flipbook selected.'); return; }

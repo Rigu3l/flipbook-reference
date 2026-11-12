@@ -32,7 +32,8 @@
       },
       controls: {
         show: { fullscreen: true, zoom: true, prevNext: true,
-                thumbnails: true, firstPage: true, lastPage: true },
+                thumbnails: true, firstPage: true, lastPage: true,
+                share: true, download: true, print: true },
         size: 'medium', accent: '#059669'
       }
     };
