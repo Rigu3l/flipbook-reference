@@ -26,6 +26,8 @@
     return {
       subtitle: '', description: '', showTitles: true,
       toc: [],
+      backgroundAudio: { path: '', enabled: false },
+      flipSound: true,
       background: {
         type: 'color', color: '#f1f5f9', gradient: '',
         imagePath: '', size: 'cover', position: 'center',
@@ -110,12 +112,23 @@
   function bgImagePath(ext) {
     return user.id + '/' + book.id + '-bg.' + ext;
   }
+  function audioPath(ext) {
+    return user.id + '/' + book.id + '-audio.' + ext;
+  }
+  function updateAudioLabel() {
+    var el = $('#design-audio-current');
+    var a = design.backgroundAudio || {};
+    el.textContent = a.path ? ('Current audio: ' + a.path.split('/').pop()) : 'No audio uploaded yet.';
+  }
 
   function readForm() {
     design.subtitle = $('#d-subtitle').value.trim();
     design.description = $('#d-description').value.trim();
     design.showTitles = $('#d-show-titles').checked;
     collectToc();
+    if (!design.backgroundAudio) design.backgroundAudio = {};
+    design.backgroundAudio.enabled = $('#design-audio-enabled').checked;
+    design.flipSound = $('#design-flip-sound').checked;
     var bg = design.background;
     bg.type = currentBgType();
     bg.color = $('#d-bg-color').value;
@@ -195,6 +208,10 @@
     });
     $('#d-btn-size').value = design.controls.size || 'medium';
     $('#d-accent').value = design.controls.accent || '#059669';
+    var a = design.backgroundAudio || {};
+    $('#design-audio-enabled').checked = a.enabled === true;
+    $('#design-flip-sound').checked = design.flipSound !== false;
+    updateAudioLabel();
     setBgType(bg.type || 'color');
     updatePreview();
   }
@@ -257,6 +274,8 @@
             design.subtitle = saved.subtitle || '';
             design.description = saved.description || '';
             if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
+            if (saved.backgroundAudio) Object.assign(design.backgroundAudio, saved.backgroundAudio);
+            if (typeof saved.flipSound === 'boolean') design.flipSound = saved.flipSound;
             if (saved.background) Object.assign(design.background, saved.background);
             if (saved.controls) {
               if (saved.controls.show) Object.assign(design.controls.show, saved.controls.show);
@@ -346,6 +365,61 @@
     $('#d-bg-image').value = '';
     $('#d-bg-image-name').textContent = 'Image removed — save to apply.';
     updatePreview();
+  });
+  /* ---- F10 Background audio: upload / remove (saves the sidecar too). ---- */
+  async function saveSidecar() {
+    var blob = new Blob([JSON.stringify(design, null, 2)], { type: 'application/json' });
+    var up = await window.fbClient.storage
+      .from(window.fbConfig.BUCKET || 'pdfs')
+      .upload(designPath(), blob, { upsert: true, contentType: 'application/json' });
+    if (up.error) throw up.error;
+  }
+  $('#design-audio-upload').addEventListener('click', async function () {
+    var file = $('#design-audio-file').files[0];
+    var status = $('#design-audio-status');
+    if (!file) { status.textContent = 'Choose an audio file first.'; return; }
+    if (!file.type || file.type.indexOf('audio/') !== 0) { status.textContent = 'That file is not audio.'; return; }
+    status.textContent = 'Uploading…';
+    try {
+      var ext = (file.name.split('.').pop() || 'mp3').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp3';
+      var path = audioPath(ext);
+      var up = await window.fbClient.storage
+        .from(window.fbConfig.BUCKET || 'pdfs')
+        .upload(path, file, { upsert: true, contentType: file.type || 'audio/mpeg' });
+      if (up.error) throw up.error;
+      if (!design.backgroundAudio) design.backgroundAudio = {};
+      design.backgroundAudio.path = path;
+      design.backgroundAudio.enabled = $('#design-audio-enabled').checked;
+      design.flipSound = $('#design-flip-sound').checked;
+      await saveSidecar();
+      updateAudioLabel();
+      status.textContent = 'Audio uploaded.';
+      showToast('Audio uploaded.', 'success');
+    } catch (e) {
+      status.textContent = 'Upload failed: ' + (e.message || e);
+      showToast('Audio upload failed.', 'error');
+    }
+  });
+  $('#design-audio-remove').addEventListener('click', async function () {
+    var status = $('#design-audio-status');
+    if (!design.backgroundAudio) design.backgroundAudio = {};
+    var oldPath = design.backgroundAudio.path;
+    design.backgroundAudio.path = '';
+    design.backgroundAudio.enabled = false;
+    $('#design-audio-enabled').checked = false;
+    $('#design-audio-file').value = '';
+    try {
+      await saveSidecar();
+      if (oldPath) {
+        await window.fbClient.storage.from(window.fbConfig.BUCKET || 'pdfs').remove([oldPath]);
+      }
+      updateAudioLabel();
+      status.textContent = 'Audio removed.';
+      showToast('Audio removed.', 'success');
+    } catch (e) {
+      status.textContent = 'Remove failed: ' + (e.message || e);
+      showToast('Audio remove failed.', 'error');
+    }
   });
   $('#design-form').addEventListener('submit', save);
   $('#toc-add').addEventListener('click', function () {

@@ -90,6 +90,8 @@
       toc: [],
       interactions: [],
       leadForm: { enabled: false },
+      backgroundAudio: { path: '', enabled: false },
+      flipSound: true,
       background: {
         type: 'color', color: '#f1f5f9', gradient: '',
         imagePath: '', size: 'cover', position: 'center',
@@ -125,6 +127,8 @@
         if (Array.isArray(saved.toc)) design.toc = saved.toc;
         if (Array.isArray(saved.interactions)) design.interactions = saved.interactions;
         if (saved.leadForm && typeof saved.leadForm === 'object') design.leadForm = saved.leadForm;
+        if (saved.backgroundAudio && typeof saved.backgroundAudio === 'object') design.backgroundAudio = saved.backgroundAudio;
+        if (typeof saved.flipSound === 'boolean') design.flipSound = saved.flipSound;
         if (saved.background) Object.assign(design.background, saved.background);
         if (saved.controls) {
           if (saved.controls.show) Object.assign(design.controls.show, saved.controls.show);
@@ -199,7 +203,73 @@
       nextBtn.style.borderColor = design.controls.accent;
     }
     if (sliderEl && design.controls.accent) sliderEl.style.accentColor = design.controls.accent;
+    setupAudio();
   }
+
+  /* ---- F10 Audio: background music (loop) + page-turn sound. ---- */
+  var soundBtn = document.getElementById('btn-sound');
+  var soundOn = false; /* user gesture required before any sound plays */
+  var bgAudioEl = null;
+  var flipCtx = null;
+  function playFlipSound() {
+    if (!soundOn || design.flipSound === false) return;
+    try {
+      if (!flipCtx) flipCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (flipCtx.state === 'suspended') flipCtx.resume();
+      var dur = 0.15;
+      var buf = flipCtx.createBuffer(1, Math.floor(flipCtx.sampleRate * dur), flipCtx.sampleRate);
+      var data = buf.getChannelData(0);
+      for (var i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      }
+      var src = flipCtx.createBufferSource();
+      src.buffer = buf;
+      var filter = flipCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1200;
+      filter.Q.value = 1;
+      var gain = flipCtx.createGain();
+      gain.gain.value = 0.12;
+      src.connect(filter); filter.connect(gain); gain.connect(flipCtx.destination);
+      src.start();
+    } catch (e) { /* audio is best-effort */ }
+  }
+  function setupAudio() {
+    var a = design.backgroundAudio || {};
+    if (bgAudioEl) { bgAudioEl.pause(); bgAudioEl = null; }
+    if (a.enabled && a.path) {
+      bgAudioEl = new Audio(window.publicPdfUrl(a.path));
+      bgAudioEl.loop = true;
+      bgAudioEl.preload = 'auto';
+      bgAudioEl.volume = 0.5;
+    }
+    updateSoundBtn();
+  }
+  function updateSoundBtn() {
+    if (!soundBtn) return;
+    soundBtn.textContent = soundOn ? 'Sound on' : 'Sound off';
+    soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+  }
+  function setSound(on) {
+    soundOn = on;
+    if (bgAudioEl) {
+      if (on) { bgAudioEl.play().catch(function () {}); }
+      else bgAudioEl.pause();
+    }
+    updateSoundBtn();
+  }
+  if (soundBtn) {
+    soundBtn.addEventListener('click', function () { setSound(!soundOn); });
+  }
+  /* Browsers block audio until the reader interacts — start the
+     background music on the first click/tap anywhere in the viewer. */
+  document.addEventListener('pointerdown', function onFirstGesture() {
+    if (soundOn) return;
+    var a = design.backgroundAudio || {};
+    if (a.enabled && a.path && bgAudioEl) setSound(true);
+    else if (design.flipSound !== false) { soundOn = true; updateSoundBtn(); }
+    document.removeEventListener('pointerdown', onFirstGesture);
+  });
 
   function showError(message) {
     loadingEl.classList.add('hidden');
@@ -627,6 +697,7 @@
       applyCoverMode();
       updateChrome();
       renderHotspots();
+      playFlipSound();
     });
     /* Start on the current page (deep link / mode switch). */
     if (start > 1) {
@@ -744,6 +815,7 @@
     turnDir = dir || (index > viewIndex ? 'next' : 'prev');
     viewIndex = index;
     renderView(from);
+    playFlipSound();
   }
 
   function goToPage(page) {
