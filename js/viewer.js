@@ -295,8 +295,12 @@
   }
   /* Browsers block audio until the reader interacts — start the
      background music on the first click/tap anywhere in the viewer. */
-  document.addEventListener('pointerdown', function onFirstGesture() {
+  document.addEventListener('pointerdown', function onFirstGesture(event) {
     if (soundOn) return;
+    /* Don't auto-enable sound when the gesture IS the Sound button —
+       its own click handler toggles it, and the two would cancel out
+       (first click on Sound would look like it did nothing). */
+    if (soundBtn && event.target && soundBtn.contains(event.target)) return;
     var a = design.backgroundAudio || {};
     if (a.enabled && a.path && bgAudioEl) setSound(true);
     else if (design.flipSound !== false) { soundOn = true; updateSoundBtn(); }
