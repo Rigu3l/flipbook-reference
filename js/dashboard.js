@@ -58,6 +58,10 @@
     designLink.className = 'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100';
     designLink.href = 'design.html?id=' + row.id;
     designLink.textContent = 'Design';
+    var iaLink = document.createElement('a');
+    iaLink.className = 'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100';
+    iaLink.href = 'interactions.html?id=' + row.id;
+    iaLink.textContent = 'Interactions';
     var del = document.createElement('button');
     del.type = 'button';
     del.className = 'rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50';
@@ -65,6 +69,7 @@
     del.addEventListener('click', function () { deleteFlipbook(row, el); });
     actions.appendChild(open);
     actions.appendChild(designLink);
+    actions.appendChild(iaLink);
     actions.appendChild(del);
     body.appendChild(h3); body.appendChild(meta); body.appendChild(actions);
     el.appendChild(cover); el.appendChild(body);

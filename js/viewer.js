@@ -88,6 +88,7 @@
     return {
       subtitle: '', description: '', showTitles: true,
       toc: [],
+      interactions: [],
       background: {
         type: 'color', color: '#f1f5f9', gradient: '',
         imagePath: '', size: 'cover', position: 'center',
@@ -121,6 +122,7 @@
         design.description = saved.description || '';
         if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
         if (Array.isArray(saved.toc)) design.toc = saved.toc;
+        if (Array.isArray(saved.interactions)) design.interactions = saved.interactions;
         if (saved.background) Object.assign(design.background, saved.background);
         if (saved.controls) {
           if (saved.controls.show) Object.assign(design.controls.show, saved.controls.show);
@@ -319,6 +321,7 @@
       if (pendingRender) { pendingRender = false; renderView(); return; }
     }
     updateChrome();
+    renderHotspots();
   }
 
   /* Load page dimensions (no rendering yet). */
@@ -376,6 +379,12 @@
     var scale = fitScaleFor(infos, pages.length) * zoom;
     for (var j = 0; j < infos.length; j++) {
       var canvas = await renderPageCanvas(infos[j], scale);
+      /* Each page is wrapped so interaction hotspots can be positioned
+         over it (percentages of the page). */
+      var wrap = document.createElement('div');
+      wrap.className = 'page-wrap relative shrink-0';
+      wrap.dataset.page = String(pages[j]);
+      wrap.appendChild(canvas);
       /* Hover hint + tap/slide to turn: a right (odd) page turns forward,
          a left (even) page turns back — only when a view exists that way.
          A tap turns in the page's direction; a slide over 30px turns in
@@ -395,7 +404,7 @@
           });
         })(turnDir);
       }
-      stageInnerEl.appendChild(canvas);
+      stageInnerEl.appendChild(wrap);
     }
     /* The two pages of a spread meet at the spine — no gap between
        them (the old 8px gap showed the background through the fold,
@@ -615,6 +624,7 @@
       renderAround(realPage);
       applyCoverMode();
       updateChrome();
+      renderHotspots();
     });
     /* Start on the current page (deep link / mode switch). */
     if (start > 1) {
@@ -1273,6 +1283,190 @@
     if (e.key === 'Enter' && searchResults.firstChild) searchResults.firstChild.click();
     if (e.key === 'Escape') toggleSearch(false);
   });
+
+  /* ---- F8 Interactions: hotspots on the current view + popup actions. ---- */
+  var hotspotLayer = document.getElementById('hotspot-layer');
+  var iaModal = document.getElementById('ia-modal');
+  var iaModalTitle = document.getElementById('ia-modal-title');
+  var iaModalBody = document.getElementById('ia-modal-body');
+
+  function hotspotDiv(it) {
+    var el = document.createElement('button');
+    el.type = 'button';
+    el.className = 'hotspot';
+    el.style.left = (it.x * 100) + '%';
+    el.style.top = (it.y * 100) + '%';
+    el.style.width = (it.w * 100) + '%';
+    el.style.height = (it.h * 100) + '%';
+    el.setAttribute('aria-label', 'Interaction: ' + it.type);
+    if (it.highlight || (it.type === 'link' && it.highlight)) el.classList.add('hotspot-highlight');
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      runInteraction(it);
+    });
+    return el;
+  }
+  function renderHotspots() {
+    /* Clear old hotspots (both the page wraps and the magazine layer). */
+    Array.prototype.slice.call(document.querySelectorAll('.hotspot')).forEach(function (el) { el.remove(); });
+    if (!design || !Array.isArray(design.interactions) || !design.interactions.length) return;
+    var pages = currentPages();
+    var list = design.interactions.filter(function (it) { return pages.indexOf(it.page) !== -1; });
+    if (!list.length) return;
+    if (mode === 'magazine') {
+      /* Hotspots live in the layer over #book-wrap. Single page: the
+         visible page fills the wrap. Spread: first page left, second
+         page right (each singleWidth wide). */
+      if (!bookWrapEl || !bookSingleWidth) return;
+      var wrapW = bookWrapEl.offsetWidth;
+      var wrapH = bookWrapEl.offsetHeight;
+      list.forEach(function (it) {
+        var idx = pages.indexOf(it.page);
+        var x0 = (pages.length === 1) ? 0 : (idx === 0 ? 0 : bookSingleWidth);
+        var el = hotspotDiv(it);
+        el.style.left = (x0 + it.x * bookSingleWidth) + 'px';
+        el.style.top = (it.y * wrapH) + 'px';
+        el.style.width = (it.w * bookSingleWidth) + 'px';
+        el.style.height = (it.h * wrapH) + 'px';
+        el.style.position = 'absolute';
+        hotspotLayer.appendChild(el);
+      });
+    } else if (mode === 'coverflow') {
+      /* Hotspots only on the centered (current) page's card. */
+      var card = document.querySelector('.cf-card[data-page="' + (currentPages()[0] || 1) + '"]');
+      if (!card) return;
+      list.forEach(function (it) {
+        if (it.page !== (currentPages()[0] || 1)) return;
+        card.appendChild(hotspotDiv(it));
+      });
+    } else {
+      /* Slider / Fade / One page: hotspots inside each page's wrap,
+         positioned by percentage of the page. */
+      list.forEach(function (it) {
+        var wrap = stageInnerEl.querySelector('.page-wrap[data-page="' + it.page + '"]');
+        if (wrap) wrap.appendChild(hotspotDiv(it));
+      });
+    }
+  }
+  function youtubeEmbed(url) {
+    var m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+    return m ? 'https://www.youtube.com/embed/' + m[1] : null;
+  }
+  function openIaModal(title, node) {
+    iaModalTitle.textContent = title || 'Interaction';
+    iaModalBody.innerHTML = '';
+    iaModalBody.appendChild(node);
+    iaModal.classList.remove('hidden');
+    iaModal.classList.add('flex');
+  }
+  function closeIaModal() {
+    iaModal.classList.add('hidden');
+    iaModal.classList.remove('flex');
+    iaModalBody.innerHTML = ''; /* stops any playing media */
+  }
+  document.getElementById('ia-modal-close').addEventListener('click', closeIaModal);
+  iaModal.addEventListener('click', function (e) { if (e.target === iaModal) closeIaModal(); });
+  function runInteraction(it) {
+    if (it.type === 'link') {
+      if (it.action === 'page') { goToPage(it.targetPage || 1); return; }
+      if (it.action === 'url' && it.url) {
+        if (it.newTab !== false) window.open(it.url, '_blank', 'noopener');
+        else window.location.href = it.url;
+        return;
+      }
+      if (it.action === 'zoom') { setZoom(it.zoom || 1.5); return; }
+      if (it.action === 'popup') {
+        if (it.popupType === 'image' && it.popupUrl) {
+          var img = document.createElement('img');
+          img.src = it.popupUrl;
+          img.alt = '';
+          img.className = 'mx-auto max-h-[60vh] rounded';
+          openIaModal('Image', img);
+        } else if (it.popupType === 'video' && it.popupUrl) {
+          var emb = youtubeEmbed(it.popupUrl);
+          if (emb) {
+            var fr = document.createElement('iframe');
+            fr.src = emb;
+            fr.className = 'aspect-video w-full rounded';
+            fr.allowFullscreen = true;
+            openIaModal('Video', fr);
+          } else {
+            var vid = document.createElement('video');
+            vid.src = it.popupUrl;
+            vid.controls = true;
+            vid.autoplay = true;
+            vid.className = 'w-full rounded';
+            openIaModal('Video', vid);
+          }
+        } else if (it.popupType === 'web' && it.popupUrl) {
+          var wfr = document.createElement('iframe');
+          wfr.src = it.popupUrl;
+          wfr.className = 'h-[60vh] w-full rounded border border-slate-200';
+          openIaModal('Web page', wfr);
+        }
+        return;
+      }
+      return;
+    }
+    if (it.type === 'image' && it.imageUrl) {
+      var img2 = document.createElement('img');
+      img2.src = it.imageUrl;
+      img2.alt = '';
+      img2.className = 'mx-auto max-h-[60vh] rounded';
+      openIaModal('Image', img2);
+      return;
+    }
+    if (it.type === 'video' && it.videoUrl) {
+      var emb2 = youtubeEmbed(it.videoUrl);
+      if (emb2) {
+        var fr2 = document.createElement('iframe');
+        fr2.src = emb2 + (it.autoplay ? '?autoplay=1' : '') + (it.muted ? (it.autoplay ? '&mute=1' : '?mute=1') : '');
+        fr2.className = 'aspect-video w-full rounded';
+        fr2.allowFullscreen = true;
+        openIaModal('Video', fr2);
+      } else {
+        var vid2 = document.createElement('video');
+        vid2.src = it.videoUrl;
+        vid2.controls = it.controls !== false;
+        vid2.muted = !!it.muted;
+        vid2.autoplay = !!it.autoplay;
+        vid2.className = 'w-full rounded';
+        openIaModal('Video', vid2);
+      }
+      return;
+    }
+    if (it.type === 'audio' && it.audioUrl) {
+      var wrap = document.createElement('div');
+      wrap.className = 'text-center';
+      if (it.title) {
+        var t = document.createElement('p');
+        t.className = 'mb-3 font-medium';
+        t.textContent = it.title;
+        wrap.appendChild(t);
+      }
+      var aud = document.createElement('audio');
+      aud.src = it.audioUrl;
+      aud.controls = true;
+      aud.autoplay = true;
+      aud.className = 'w-full';
+      wrap.appendChild(aud);
+      openIaModal(it.title || 'Audio', wrap);
+      return;
+    }
+    if (it.type === 'web' && it.webUrl) {
+      var wfr2 = document.createElement('iframe');
+      if (it.webUrl.trim().toLowerCase().indexOf('<iframe') === 0) {
+        wfr2.srcdoc = it.webUrl;
+      } else {
+        wfr2.src = it.webUrl;
+      }
+      wfr2.className = 'h-[60vh] w-full rounded border border-slate-200';
+      if (it.noScrollbars) wfr2.setAttribute('scrolling', 'no');
+      openIaModal('Web page', wfr2);
+      return;
+    }
+  }
 
   async function loadBook() {
     if (!id) { showError('No flipbook selected.'); return; }

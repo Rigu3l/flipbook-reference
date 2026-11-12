@@ -11,7 +11,7 @@
   <script src="js/vendor/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f7" defer></script>
+  <script src="js/viewer.js?v=f8" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
@@ -33,6 +33,12 @@
     #coverflow { position: relative; height: 360px; perspective: 1200px; }
     .cf-card { position: absolute; left: 50%; top: 50%; transition: transform .35s ease, opacity .35s ease; cursor: pointer; }
     .cf-card canvas { display: block; border-radius: 4px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+    /* Interaction hotspots: invisible click areas over a page. */
+    .hotspot { position: absolute; cursor: pointer; background: transparent; border: none; padding: 0; z-index: 5; }
+    .hotspot-highlight { background: rgba(124,92,255,.18); border: 2px dashed #7c5cff; border-radius: 4px; }
+    .hotspot:hover { background: rgba(124,92,255,.12); }
+    #hotspot-layer .hotspot { pointer-events: auto; }
+    .page-wrap canvas { display: block; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-900">
@@ -67,6 +73,17 @@
       <span class="mx-1 hidden h-6 w-px bg-slate-200 sm:block"></span>
       <button id="btn-fullscreen" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Fullscreen</button>
       <button id="btn-share" type="button" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700">Share</button>
+    </div>
+  </div>
+
+  <!-- Interaction popup (image / video / audio / web) -->
+  <div id="ia-modal" class="fixed inset-0 z-40 hidden items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Interaction">
+    <div class="w-full max-w-2xl rounded-xl bg-white shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+        <h2 id="ia-modal-title" class="font-semibold">Interaction</h2>
+        <button id="ia-modal-close" type="button" class="rounded-lg px-2 py-1 text-lg text-slate-500 hover:bg-slate-100" aria-label="Close">&times;</button>
+      </div>
+      <div id="ia-modal-body" class="max-h-[70vh] overflow-auto px-5 py-4"></div>
     </div>
   </div>
 
@@ -206,7 +223,7 @@
 
     <div id="stage" class="hidden w-full select-none overflow-auto" style="max-height: calc(100vh - 260px)">
       <div id="stage-inner" class="relative mx-auto flex w-max overflow-hidden"></div>
-      <div id="book-wrap" class="mx-auto hidden w-max"><div id="book"></div></div>
+      <div id="book-wrap" class="relative mx-auto hidden w-max"><div id="book"></div><div id="hotspot-layer" class="pointer-events-none absolute inset-0 z-10"></div></div>
       <div id="coverflow" class="hidden"></div>
     </div>
 
