@@ -9,7 +9,7 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js?v=ui1" defer></script>
-  <script src="js/design.js?v=ui1" defer></script>
+  <script src="js/design.js?v=ui2" defer></script>
 </head>
 <body class="bg-[#f4f4f1] text-slate-900">
   <!-- Heyzine-style green editor header -->
@@ -80,7 +80,7 @@
 
       <form id="design-form" class="mx-auto mt-6 hidden max-w-3xl space-y-6 px-4 pb-12" novalidate>
         <!-- Title -->
-        <section id="sec-title" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-title" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 class="font-semibold">Title</h2>
           <p class="mt-1 text-sm text-slate-500">Shown on the flipbook's background when "Show titles" is on.</p>
           <div class="mt-4 space-y-4">
@@ -103,7 +103,7 @@
         </section>
 
         <!-- Page Effect (default view mode) -->
-        <section id="sec-view" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-view" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 class="font-semibold">Page Effect</h2>
           <p class="mt-1 text-sm text-slate-500">How the flipbook turns pages when a reader first opens it. Readers can still switch views in the reader.</p>
           <div class="mt-4">
@@ -119,7 +119,7 @@
         </section>
 
         <!-- Table of contents -->
-        <section id="sec-toc" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-toc" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 class="font-semibold">Table of contents</h2>
           <p class="mt-1 text-sm text-slate-500">Index items readers see in the Contents panel. Each item jumps to its page.</p>
           <div id="toc-items" class="mt-4 space-y-2"></div>
@@ -127,7 +127,7 @@
         </section>
 
         <!-- Background -->
-        <section id="sec-bg" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-bg" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 class="font-semibold">Background</h2>
           <p class="mt-1 text-sm text-slate-500">The backdrop behind the book in the reader.</p>
           <div class="mt-4 flex gap-2" role="tablist" aria-label="Background type">
@@ -201,7 +201,7 @@
         </section>
 
         <!-- Background audio -->
-        <section id="sec-audio" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-audio" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 class="font-semibold">Background audio</h2>
           <p class="mt-1 text-sm text-slate-500">Music that plays on a loop while the flipbook is open.</p>
           <div class="mt-4 space-y-3">
@@ -225,7 +225,7 @@
         </section>
 
         <!-- Controls -->
-        <section id="sec-controls" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-controls" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 class="font-semibold">Controls</h2>
           <p class="mt-1 text-sm text-slate-500">Which buttons the reader shows.</p>
           <div class="mt-4 grid gap-2 sm:grid-cols-2">

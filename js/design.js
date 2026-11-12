@@ -309,6 +309,7 @@
       buildSwatches();
       fillForm();
       $('#design-form').classList.remove('hidden');
+      showSection('sec-title'); /* Title is the card shown first. */
       renderPreview();
     } catch (err) {
       showError('Could not load this flipbook: ' + (err.message || 'unknown error'));
@@ -382,13 +383,30 @@
     }
   }
 
-  /* ---- Wire up ---- */
-  /* Sidebar nav: scroll to the section (Heyzine editor). */
-  $$('.editor-nav-btn').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var sec = document.getElementById(b.dataset.section);
-      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  /* ---- Sidebar panels: only the section whose button was clicked is
+     shown (Heyzine editor) — the rest stay hidden until picked. ---- */
+  function showSection(sectionId) {
+    $$('.editor-section').forEach(function (sec) {
+      sec.classList.toggle('hidden', sec.id !== sectionId);
     });
+    $$('.editor-nav-btn').forEach(function (b) {
+      var on = b.dataset.section === sectionId;
+      b.classList.toggle('bg-[#19A975]', on);
+      b.classList.toggle('text-white', on);
+      b.classList.toggle('bg-white', !on);
+      b.classList.toggle('text-slate-700', !on);
+      var icon = b.querySelector('span');
+      if (icon) {
+        icon.classList.toggle('text-white', on);
+        icon.classList.toggle('text-[#19A975]', !on);
+      }
+    });
+  }
+
+  /* ---- Wire up ---- */
+  /* Sidebar nav: pop up the matching section card. */
+  $$('.editor-nav-btn').forEach(function (b) {
+    b.addEventListener('click', function () { showSection(b.dataset.section); });
   });
   /* Sidebar Save triggers the same save as the form button. */
   var saveSide = document.getElementById('design-save-side');
