@@ -236,8 +236,33 @@
     }
   }
 
+  /* ---- In-page confirm (replaces window.confirm, which the
+     automated browser auto-dismisses and which is jarring UX). ---- */
+  var confirmEl = document.getElementById('dash-confirm');
+  var confirmTextEl = document.getElementById('dash-confirm-text');
+  var confirmOkBtn = document.getElementById('dash-confirm-ok');
+  var confirmCancelBtn = document.getElementById('dash-confirm-cancel');
+  var confirmResolve = null;
+  function askConfirm(message) {
+    return new Promise(function (resolve) {
+      confirmResolve = resolve;
+      confirmTextEl.textContent = message;
+      confirmEl.classList.remove('hidden');
+      confirmEl.classList.add('flex');
+      confirmOkBtn.focus();
+    });
+  }
+  function closeConfirm(result) {
+    confirmEl.classList.add('hidden');
+    confirmEl.classList.remove('flex');
+    if (confirmResolve) { var r = confirmResolve; confirmResolve = null; r(result); }
+  }
+  if (confirmOkBtn) confirmOkBtn.addEventListener('click', function () { closeConfirm(true); });
+  if (confirmCancelBtn) confirmCancelBtn.addEventListener('click', function () { closeConfirm(false); });
+  if (confirmEl) confirmEl.addEventListener('click', function (e) { if (e.target === confirmEl) closeConfirm(false); });
+
   async function moveToTrash(row, el) {
-    if (!window.confirm('Move "' + row.title + '" to trash? You can restore it later.')) return;
+    if (!await askConfirm('Move "' + row.title + '" to trash? You can restore it later.')) return;
     try {
       if (trash.indexOf(row.id) === -1) trash.push(row.id);
       await saveSidecar(trashPath(), trash);
@@ -262,7 +287,7 @@
   }
 
   async function deletePermanently(row, el) {
-    if (!window.confirm('Delete "' + row.title + '" permanently? This cannot be undone.')) return;
+    if (!await askConfirm('Delete "' + row.title + '" permanently? This cannot be undone.')) return;
     try {
       var userPart = (row.file_path || '').split('/')[0] || user.id;
       var paths = [
