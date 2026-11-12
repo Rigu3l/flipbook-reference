@@ -53,7 +53,14 @@
 
     <section class="mt-10">
       <h2 class="text-xl font-bold">My flipbooks</h2>
-      <p id="my-status" class="mt-1 text-sm text-slate-500">Loading…</p>
+      <p id="dash-stats" class="mt-1 text-sm text-slate-500">Loading…</p>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <input id="dash-search" type="search" placeholder="Search by title…" aria-label="Search flipbooks by title"
+          class="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+        <button id="dash-new-shelf" type="button" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">+ New shelf</button>
+      </div>
+      <div id="dash-filters" class="mt-3 flex flex-wrap gap-2"></div>
+      <p id="my-status" class="mt-4 text-sm text-slate-500">Loading…</p>
       <div id="my-grid" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
     </section>
   </main>
