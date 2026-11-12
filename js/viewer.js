@@ -89,6 +89,7 @@
       subtitle: '', description: '', showTitles: true,
       toc: [],
       interactions: [],
+      leadForm: { enabled: false },
       background: {
         type: 'color', color: '#f1f5f9', gradient: '',
         imagePath: '', size: 'cover', position: 'center',
@@ -123,6 +124,7 @@
         if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
         if (Array.isArray(saved.toc)) design.toc = saved.toc;
         if (Array.isArray(saved.interactions)) design.interactions = saved.interactions;
+        if (saved.leadForm && typeof saved.leadForm === 'object') design.leadForm = saved.leadForm;
         if (saved.background) Object.assign(design.background, saved.background);
         if (saved.controls) {
           if (saved.controls.show) Object.assign(design.controls.show, saved.controls.show);
@@ -1468,6 +1470,88 @@
     }
   }
 
+  /* ---- F9 Gates: password (verify_flipbook_password RPC) and lead
+     form (submit_lead RPC). Each returns a Promise that resolves when
+     the reader passes the gate. ---- */
+  function leadKey() { return 'fb-lead-' + (book ? book.id : ''); }
+  function askPassword() {
+    return new Promise(function (resolve) {
+      var gate = document.getElementById('pw-gate');
+      var form = document.getElementById('pw-form');
+      var input = document.getElementById('pw-input');
+      var err = document.getElementById('pw-error');
+      gate.classList.remove('hidden');
+      gate.classList.add('flex');
+      input.focus();
+      form.onsubmit = async function (e) {
+        e.preventDefault();
+        var pw = input.value;
+        if (!pw) return;
+        try {
+          var hash = await window.sha256Hex(pw);
+          var res = await window.fbClient.rpc('verify_flipbook_password',
+            { p_flipbook_id: book.id, p_password_hash: hash });
+          if (res.error) throw res.error;
+          if (res.data === true) {
+            gate.classList.add('hidden');
+            gate.classList.remove('flex');
+            resolve();
+          } else {
+            err.classList.remove('hidden');
+            input.select();
+          }
+        } catch (e2) {
+          err.textContent = 'Could not check the password. Try again.';
+          err.classList.remove('hidden');
+        }
+      };
+    });
+  }
+  function askLead() {
+    /* Already submitted for this book on this browser — don't ask again. */
+    try { if (localStorage.getItem(leadKey())) return Promise.resolve(); } catch (e) {}
+    return new Promise(function (resolve) {
+      var gate = document.getElementById('lead-gate');
+      var form = document.getElementById('lead-form');
+      var nameEl = document.getElementById('lead-name');
+      var emailEl = document.getElementById('lead-email');
+      var err = document.getElementById('lead-error');
+      var skip = document.getElementById('lead-skip');
+      gate.classList.remove('hidden');
+      gate.classList.add('flex');
+      nameEl.focus();
+      function done() {
+        gate.classList.add('hidden');
+        gate.classList.remove('flex');
+        try { localStorage.setItem(leadKey(), '1'); } catch (e) {}
+        resolve();
+      }
+      skip.addEventListener('click', done);
+      form.onsubmit = async function (e) {
+        e.preventDefault();
+        var name = nameEl.value.trim();
+        var email = emailEl.value.trim();
+        if (!name || !email || email.indexOf('@') === -1) {
+          err.textContent = 'Enter your name and a valid email.';
+          err.classList.remove('hidden');
+          return;
+        }
+        try {
+          var res = await window.fbClient.rpc('submit_lead',
+            { p_flipbook_id: book.id, p_name: name, p_email: email });
+          if (res.error) throw res.error;
+          done();
+        } catch (e2) {
+          /* The leads table / RPC is a one-time setup (sql/leads.sql).
+             Never block the reader — offer to continue without saving. */
+          err.textContent = 'Could not save your details (the lead form needs a one-time setup). You can still read the book.';
+          err.classList.remove('hidden');
+          skip.classList.remove('hidden');
+        }
+      };
+    });
+  }
+
   async function loadBook() {
     if (!id) { showError('No flipbook selected.'); return; }
     if (!window.fbClient) { showError('Supabase is not configured yet.'); return; }
@@ -1482,15 +1566,14 @@
       if (res.error) throw res.error;
       book = res.data;
       if (!book) { showError('This flipbook does not exist or is not public.'); return; }
-      if (book.has_password) {
-        showError('This flipbook is password protected. Password entry arrives in F9.');
-        return;
-      }
       titleEl.textContent = book.title;
       mode = loadMode();
       modeSelect.value = mode;
       await loadDesign();
       applyDesign();
+      /* Password gate first, then the lead form gate. */
+      if (book.has_password) await askPassword();
+      if (design.leadForm && design.leadForm.enabled) await askLead();
       var url = window.publicPdfUrl(book.file_path);
       pdf = await window.pdfjsLib.getDocument({ url: url }).promise;
       totalPages = pdf.numPages;

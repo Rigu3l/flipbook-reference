@@ -11,7 +11,7 @@
   <script src="js/vendor/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js" defer></script>
-  <script src="js/viewer.js?v=f8" defer></script>
+  <script src="js/viewer.js?v=f9" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
@@ -84,6 +84,34 @@
         <button id="ia-modal-close" type="button" class="rounded-lg px-2 py-1 text-lg text-slate-500 hover:bg-slate-100" aria-label="Close">&times;</button>
       </div>
       <div id="ia-modal-body" class="max-h-[70vh] overflow-auto px-5 py-4"></div>
+    </div>
+  </div>
+
+  <!-- Password gate (F9) -->
+  <div id="pw-gate" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-100 p-4">
+    <div class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-lg">
+      <h2 class="text-lg font-semibold">This flipbook is password protected</h2>
+      <p class="mt-1 text-sm text-slate-500">Enter the password to read it.</p>
+      <form id="pw-form" class="mt-4 space-y-3">
+        <input id="pw-input" type="password" placeholder="Password" autocomplete="current-password" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <p id="pw-error" class="hidden text-sm text-red-600">Wrong password. Try again.</p>
+        <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white hover:bg-emerald-700">Unlock</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lead form gate (F9) -->
+  <div id="lead-gate" class="fixed inset-0 z-40 hidden items-center justify-center bg-slate-100 p-4">
+    <div class="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-lg">
+      <h2 class="text-lg font-semibold">Before you read</h2>
+      <p class="mt-1 text-sm text-slate-500">Leave your name and email to open this flipbook.</p>
+      <form id="lead-form" class="mt-4 space-y-3">
+        <input id="lead-name" type="text" placeholder="Your name" autocomplete="name" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <input id="lead-email" type="email" placeholder="Your email" autocomplete="email" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <p id="lead-error" class="hidden text-sm text-red-600"></p>
+        <button type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white hover:bg-emerald-700">Continue to the flipbook</button>
+        <button id="lead-skip" type="button" class="hidden w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Continue without saving</button>
+      </form>
     </div>
   </div>
 

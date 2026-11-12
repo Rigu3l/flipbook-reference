@@ -62,6 +62,10 @@
     iaLink.className = 'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100';
     iaLink.href = 'interactions.html?id=' + row.id;
     iaLink.textContent = 'Interactions';
+    var settingsLink = document.createElement('a');
+    settingsLink.className = 'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100';
+    settingsLink.href = 'settings.html?id=' + row.id;
+    settingsLink.textContent = 'Settings';
     var del = document.createElement('button');
     del.type = 'button';
     del.className = 'rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50';
@@ -70,6 +74,7 @@
     actions.appendChild(open);
     actions.appendChild(designLink);
     actions.appendChild(iaLink);
+    actions.appendChild(settingsLink);
     actions.appendChild(del);
     body.appendChild(h3); body.appendChild(meta); body.appendChild(actions);
     el.appendChild(cover); el.appendChild(body);
