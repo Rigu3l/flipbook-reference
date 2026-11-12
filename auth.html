@@ -38,6 +38,24 @@
         <p id="auth-error" class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
         <button id="auth-submit" type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white hover:bg-emerald-700">Sign in</button>
       </form>
+      <p class="mt-4 text-center text-sm">
+        <button id="auth-forgot" type="button" class="font-medium text-emerald-700 hover:text-emerald-800">Forgot password?</button>
+      </p>
+      <!-- Forgot password (F12) -->
+      <form id="reset-form" class="mt-6 hidden space-y-4">
+        <p class="text-sm text-slate-600">Enter your email and we will send you a link to reset your password.</p>
+        <div>
+          <label for="reset-email" class="block text-sm font-medium text-slate-700">Email</label>
+          <input id="reset-email" type="email" required autocomplete="email"
+            class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
+        </div>
+        <p id="reset-error" class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
+        <p id="reset-done" class="hidden rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Check your email for a reset link.</p>
+        <button id="reset-submit" type="submit" class="w-full rounded-lg bg-emerald-600 px-4 py-2.5 font-medium text-white hover:bg-emerald-700">Send reset link</button>
+        <p class="text-center text-sm">
+          <button id="reset-back" type="button" class="font-medium text-emerald-700 hover:text-emerald-800">&larr; Back to sign in</button>
+        </p>
+      </form>
     </div>
   </main>
 </body>

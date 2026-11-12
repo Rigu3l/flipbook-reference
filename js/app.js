@@ -90,6 +90,10 @@
       var dash = document.createElement('a');
       dash.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';
       dash.href = 'dashboard.html'; dash.textContent = 'My flipbooks';
+      var acct = document.createElement('a');
+      acct.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';
+      acct.href = 'account.html'; acct.textContent = user.email || 'Account';
+      acct.title = 'Account';
       var out = document.createElement('button');
       out.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';
       out.type = 'button'; out.textContent = 'Sign out';
@@ -97,7 +101,7 @@
         await client.auth.signOut();
         window.location.href = 'index.html';
       });
-      nav.appendChild(dash); nav.appendChild(out);
+      nav.appendChild(dash); nav.appendChild(acct); nav.appendChild(out);
     } else {
       var link = document.createElement('a');
       link.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';

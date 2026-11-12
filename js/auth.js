@@ -17,8 +17,63 @@
     submit.textContent = isSignin ? 'Sign in' : 'Sign up';
   }
 
-  tabSignin.addEventListener('click', function () { setMode('signin'); });
-  tabSignup.addEventListener('click', function () { setMode('signup'); });
+  tabSignin.addEventListener('click', function () { setMode('signin'); showAuthForm(); });
+  tabSignup.addEventListener('click', function () { setMode('signup'); showAuthForm(); });
+
+  /* ---- F12 Forgot password: send a reset link, then the reset page
+     (reset-password.html) lets the user set a new password. ---- */
+  var forgotBtn = document.getElementById('auth-forgot');
+  var resetForm = document.getElementById('reset-form');
+  var resetBack = document.getElementById('reset-back');
+  var resetError = document.getElementById('reset-error');
+  var resetDone = document.getElementById('reset-done');
+  function showAuthForm() {
+    form.classList.remove('hidden');
+    forgotBtn.classList.remove('hidden');
+    resetForm.classList.add('hidden');
+    resetError.classList.add('hidden');
+    resetDone.classList.add('hidden');
+  }
+  function showResetForm() {
+    form.classList.add('hidden');
+    forgotBtn.classList.add('hidden');
+    resetForm.classList.remove('hidden');
+    var email = document.getElementById('email').value.trim();
+    if (email) document.getElementById('reset-email').value = email;
+  }
+  if (forgotBtn) forgotBtn.addEventListener('click', showResetForm);
+  if (resetBack) resetBack.addEventListener('click', showAuthForm);
+  if (resetForm) resetForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    resetError.classList.add('hidden');
+    resetDone.classList.add('hidden');
+    var email = document.getElementById('reset-email').value.trim();
+    if (!email) {
+      resetError.textContent = 'Please enter your email.';
+      resetError.classList.remove('hidden');
+      return;
+    }
+    if (!window.fbClient) {
+      resetError.textContent = 'Supabase is not configured yet.';
+      resetError.classList.remove('hidden');
+      return;
+    }
+    var btn = document.getElementById('reset-submit');
+    btn.disabled = true;
+    try {
+      var redirectTo = window.siteBaseUrl()
+        ? window.siteBaseUrl() + '/reset-password.html'
+        : window.location.origin + '/reset-password.html';
+      var result = await window.fbClient.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+      if (result.error) throw result.error;
+      resetDone.classList.remove('hidden');
+    } catch (err) {
+      resetError.textContent = err && err.message ? err.message : 'Something went wrong.';
+      resetError.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   form.addEventListener('submit', async function (event) {
     event.preventDefault();
