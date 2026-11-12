@@ -80,22 +80,31 @@
   }
   window.currentUser = currentUser;
 
-  /* Top nav: Dashboard + Sign out when signed in, else Sign in. */
+  /* Top nav: Dashboard + Sign out when signed in, else Sign in.
+     On the green (Heyzine-style) header the links are white and the
+     Dashboard link is a white pill; on white headers they stay slate. */
   async function renderNav() {
     var nav = document.getElementById('nav-auth');
     if (!nav) return;
+    var header = nav.closest('header');
+    var green = !!(header && header.getAttribute('data-nav-theme') === 'green');
+    var linkCls = green
+      ? 'text-sm font-medium text-white hover:underline'
+      : 'text-sm font-medium text-slate-700 hover:text-emerald-700';
     var user = await currentUser();
     nav.innerHTML = '';
     if (user) {
       var dash = document.createElement('a');
-      dash.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';
-      dash.href = 'dashboard.html'; dash.textContent = 'My flipbooks';
+      dash.className = green
+        ? 'rounded-lg bg-white px-4 py-2 text-sm font-medium text-[#19A975] hover:bg-slate-100'
+        : linkCls;
+      dash.href = 'dashboard.html'; dash.textContent = 'Dashboard';
       var acct = document.createElement('a');
-      acct.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';
+      acct.className = linkCls;
       acct.href = 'account.html'; acct.textContent = user.email || 'Account';
       acct.title = 'Account';
       var out = document.createElement('button');
-      out.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';
+      out.className = linkCls;
       out.type = 'button'; out.textContent = 'Sign out';
       out.addEventListener('click', async function () {
         await client.auth.signOut();
@@ -104,7 +113,9 @@
       nav.appendChild(dash); nav.appendChild(acct); nav.appendChild(out);
     } else {
       var link = document.createElement('a');
-      link.className = 'text-sm font-medium text-slate-700 hover:text-emerald-700';
+      link.className = green
+        ? 'rounded-lg bg-white px-4 py-2 text-sm font-medium text-[#19A975] hover:bg-slate-100'
+        : linkCls;
       link.href = 'auth.html'; link.textContent = 'Sign in';
       nav.appendChild(link);
     }

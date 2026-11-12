@@ -11,7 +11,7 @@
   var bgImageFile = null;   /* newly chosen background image, if any */
   var bgImageRemoved = false;
 
-  var COLOR_SWATCHES = ['#f1f5f9', '#ffffff', '#0f172a', '#059669', '#7c5cff',
+  var COLOR_SWATCHES = ['#f1f5f9', '#ffffff', '#0f172a', '#19A975', '#7c5cff',
     '#f59e0b', '#ef4444', '#0ea5e9', '#f8ede9', '#fef3c7'];
   var GRADIENTS = [
     'linear-gradient(135deg,#7c5cff,#2dd4bf)',
@@ -26,6 +26,7 @@
     return {
       subtitle: '', description: '', showTitles: true,
       toc: [],
+      viewMode: 'magazine',
       backgroundAudio: { path: '', enabled: false },
       flipSound: true,
       background: {
@@ -38,7 +39,7 @@
                 thumbnails: true, firstPage: true, lastPage: true,
                 share: true, download: true, print: true,
                 toc: true, search: true, bookmarks: true },
-        size: 'medium', accent: '#059669'
+        size: 'medium', accent: '#19A975'
       }
     };
   }
@@ -125,6 +126,7 @@
     design.subtitle = $('#d-subtitle').value.trim();
     design.description = $('#d-description').value.trim();
     design.showTitles = $('#d-show-titles').checked;
+    design.viewMode = $('#d-view-mode').value || 'magazine';
     collectToc();
     if (!design.backgroundAudio) design.backgroundAudio = {};
     design.backgroundAudio.enabled = $('#design-audio-enabled').checked;
@@ -145,15 +147,16 @@
   }
 
   function currentBgType() {
-    var active = document.querySelector('.bgtype-btn.bg-emerald-600');
+    var active = document.querySelector('.bgtype-btn[data-active="true"]');
     return active ? active.dataset.bgtype : 'color';
   }
   function setBgType(type) {
     $$('.bgtype-btn').forEach(function (b) {
       var on = b.dataset.bgtype === type;
-      b.classList.toggle('bg-emerald-600', on);
+      b.setAttribute('data-active', on ? 'true' : 'false');
+      b.classList.toggle('bg-[#19A975]', on);
       b.classList.toggle('text-white', on);
-      b.classList.toggle('border-emerald-600', on);
+      b.classList.toggle('border-[#19A975]', on);
       b.classList.toggle('bg-white', !on);
       b.classList.toggle('text-slate-700', !on);
     });
@@ -184,6 +187,14 @@
     pv.style.backgroundRepeat = 'no-repeat';
     pv.style.opacity = String(Math.max(0, Math.min(100, parseInt($('#d-bg-transparency').value, 10) || 100)) / 100);
     pv.style.filter = 'blur(' + (parseInt($('#d-bg-blur').value, 10) || 0) + 'px)';
+    /* The editor's live preview strip uses the same background. */
+    var ep = document.getElementById('editor-preview');
+    if (ep) {
+      ep.style.background = css;
+      ep.style.backgroundSize = pv.style.backgroundSize;
+      ep.style.backgroundPosition = pv.style.backgroundPosition;
+      ep.style.backgroundRepeat = 'no-repeat';
+    }
     $('#d-bg-transparency-val').textContent = $('#d-bg-transparency').value + '%';
     $('#d-bg-blur-val').textContent = $('#d-bg-blur').value + 'px';
     $('#d-bg-color-hex').textContent = $('#d-bg-color').value;
@@ -195,6 +206,7 @@
     $('#d-subtitle').value = design.subtitle || '';
     $('#d-description').value = design.description || '';
     $('#d-show-titles').checked = design.showTitles !== false;
+    $('#d-view-mode').value = design.viewMode || 'magazine';
     renderTocItems();
     var bg = design.background;
     $('#d-bg-color').value = bg.color || '#f1f5f9';
@@ -207,7 +219,7 @@
       cb.checked = design.controls.show[cb.dataset.show] !== false;
     });
     $('#d-btn-size').value = design.controls.size || 'medium';
-    $('#d-accent').value = design.controls.accent || '#059669';
+    $('#d-accent').value = design.controls.accent || '#19A975';
     var a = design.backgroundAudio || {};
     $('#design-audio-enabled').checked = a.enabled === true;
     $('#design-flip-sound').checked = design.flipSound !== false;
@@ -264,6 +276,14 @@
       if (!book) { showError('This flipbook does not exist or is not yours.'); return; }
       $('#design-for').textContent = 'For "' + book.title + '" · ' + (book.page_count || 0) + ' pages';
       $('#design-view').href = 'viewer.html?id=' + book.id;
+      var shareSide = document.getElementById('design-share');
+      if (shareSide) shareSide.href = 'viewer.html?id=' + book.id;
+      var settingsLink = document.getElementById('header-settings-link');
+      if (settingsLink) { settingsLink.href = 'settings.html?id=' + book.id; settingsLink.classList.remove('hidden'); }
+      ['nav-settings', 'nav-lead', 'nav-replace', 'nav-copy'].forEach(function (navId) {
+        var el = document.getElementById(navId);
+        if (el) el.href = 'settings.html?id=' + book.id;
+      });
       /* Existing design sidecar, if the owner saved one before. */
       try {
         var url = window.publicPdfUrl(designPath());
@@ -274,6 +294,7 @@
             design.subtitle = saved.subtitle || '';
             design.description = saved.description || '';
             if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
+            if (saved.viewMode) design.viewMode = saved.viewMode;
             if (saved.backgroundAudio) Object.assign(design.backgroundAudio, saved.backgroundAudio);
             if (typeof saved.flipSound === 'boolean') design.flipSound = saved.flipSound;
             if (saved.background) Object.assign(design.background, saved.background);
@@ -288,8 +309,29 @@
       buildSwatches();
       fillForm();
       $('#design-form').classList.remove('hidden');
+      renderPreview();
     } catch (err) {
       showError('Could not load this flipbook: ' + (err.message || 'unknown error'));
+    }
+  }
+
+  /* ---- Live preview: the book's first page on the design background. ---- */
+  async function renderPreview() {
+    var canvas = document.getElementById('preview-canvas');
+    var empty = document.getElementById('preview-empty');
+    if (!canvas || !book || !window.pdfjsLib) return;
+    try {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/vendor/pdf.worker.min.js';
+      var pdf = await window.pdfjsLib.getDocument(window.publicPdfUrl(book.file_path)).promise;
+      var page = await pdf.getPage(1);
+      var viewport = page.getViewport({ scale: 0.5 });
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+      if (empty) empty.classList.add('hidden');
+      canvas.classList.remove('hidden');
+    } catch (e) {
+      if (empty) empty.textContent = 'Preview unavailable.';
     }
   }
 
@@ -341,6 +383,24 @@
   }
 
   /* ---- Wire up ---- */
+  /* Sidebar nav: scroll to the section (Heyzine editor). */
+  $$('.editor-nav-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var sec = document.getElementById(b.dataset.section);
+      if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  /* Sidebar Save triggers the same save as the form button. */
+  var saveSide = document.getElementById('design-save-side');
+  if (saveSide) saveSide.addEventListener('click', function () {
+    var form = document.getElementById('design-form');
+    if (form) form.requestSubmit();
+  });
+  var headerSignout = document.getElementById('header-signout');
+  if (headerSignout) headerSignout.addEventListener('click', async function () {
+    if (window.fbClient) await window.fbClient.auth.signOut();
+    window.location.href = 'index.html';
+  });
   $$('.bgtype-btn').forEach(function (b) {
     b.addEventListener('click', function () { setBgType(b.dataset.bgtype); });
   });

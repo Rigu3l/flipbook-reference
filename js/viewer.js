@@ -89,6 +89,7 @@
       subtitle: '', description: '', showTitles: true,
       toc: [],
       interactions: [],
+      viewMode: 'magazine',
       leadForm: { enabled: false },
       backgroundAudio: { path: '', enabled: false },
       flipSound: true,
@@ -102,7 +103,7 @@
                 thumbnails: true, firstPage: true, lastPage: true,
                 share: true, download: true, print: true,
                 toc: true, search: true, bookmarks: true },
-        size: 'medium', accent: '#059669'
+        size: 'medium', accent: '#19A975'
       }
     };
   }
@@ -124,6 +125,7 @@
         design.subtitle = saved.subtitle || '';
         design.description = saved.description || '';
         if (typeof saved.showTitles === 'boolean') design.showTitles = saved.showTitles;
+        if (saved.viewMode) design.viewMode = saved.viewMode;
         if (Array.isArray(saved.toc)) design.toc = saved.toc;
         if (Array.isArray(saved.interactions)) design.interactions = saved.interactions;
         if (saved.leadForm && typeof saved.leadForm === 'object') design.leadForm = saved.leadForm;
@@ -279,8 +281,12 @@
   }
   function updateSoundBtn() {
     if (!soundBtn) return;
-    soundBtn.textContent = soundOn ? 'Sound on' : 'Sound off';
+    /* Icon button (Heyzine reader): a note, green when on, grey when off. */
+    soundBtn.textContent = '♪';
+    soundBtn.classList.toggle('text-[#19A975]', soundOn);
+    soundBtn.classList.toggle('text-slate-400', !soundOn);
     soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    soundBtn.title = soundOn ? 'Sound on' : 'Sound off';
   }
   function setSound(on) {
     soundOn = on;
@@ -881,6 +887,11 @@
       var saved = localStorage.getItem('fb-mode-' + id);
       if (saved && modeSelect.querySelector('option[value="' + saved + '"]')) return saved;
     } catch (e) { /* storage unavailable; fall through */ }
+    /* No per-book choice yet: use the owner's default from the design
+       (Page Effect in the Design panel), else Magazine. */
+    if (design && design.viewMode && modeSelect.querySelector('option[value="' + design.viewMode + '"]')) {
+      return design.viewMode;
+    }
     return 'magazine';
   }
 
@@ -1242,6 +1253,7 @@
     if (!bookmarkBtn) return;
     var on = loadBookmarks().indexOf(currentPages()[0] || 1) !== -1;
     bookmarkBtn.setAttribute('aria-pressed', String(on));
+    bookmarkBtn.textContent = on ? '★' : '☆';
     bookmarkBtn.classList.toggle('bg-amber-100', on);
     bookmarkBtn.classList.toggle('border-amber-400', on);
   }
@@ -1675,10 +1687,12 @@
       book = res.data;
       if (!book) { showError('This flipbook does not exist or is not public.'); return; }
       titleEl.textContent = book.title;
-      mode = loadMode();
-      modeSelect.value = mode;
       await loadDesign();
       applyDesign();
+      /* Mode after the design loads, so the owner's Page Effect default
+         (design.viewMode) is available when no per-book choice exists. */
+      mode = loadMode();
+      modeSelect.value = mode;
       /* Password gate first, then the lead form gate. */
       if (book.has_password) await askPassword();
       if (design.leadForm && design.leadForm.enabled) await askLead();

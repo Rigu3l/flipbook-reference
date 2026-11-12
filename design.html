@@ -6,197 +6,267 @@
   <title>Design — Flipbook Reference</title>
   <script src="js/vendor/tailwind.js"></script>
   <script src="js/vendor/supabase.min.js"></script>
+  <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/app.js" defer></script>
-  <script src="js/design.js" defer></script>
+  <script src="js/app.js?v=ui1" defer></script>
+  <script src="js/design.js?v=ui1" defer></script>
 </head>
-<body class="bg-slate-50 text-slate-900">
-  <header class="border-b border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-      <a href="index.html" class="text-lg font-bold tracking-tight">Flipbook <span class="text-emerald-600">Reference</span></a>
-      <nav id="nav-auth" class="flex items-center gap-4"></nav>
+<body class="bg-[#f4f4f1] text-slate-900">
+  <!-- Heyzine-style green editor header -->
+  <header class="bg-[#19A975]" data-nav-theme="green">
+    <div class="mx-auto flex max-w-none items-center justify-between gap-2 px-4 py-2">
+      <a href="index.html" class="flex shrink-0 items-center gap-2 text-lg font-bold text-white">
+        <span class="flex h-8 w-8 items-center justify-center rounded-md border-2 border-white text-base leading-none">&#128214;</span>
+        Flipbook Reference
+      </a>
+      <nav class="flex items-center gap-1 overflow-x-auto text-sm font-medium text-white">
+        <a href="index.html" class="rounded-lg px-3 py-2 hover:bg-white/10">Home</a>
+        <a href="dashboard.html" class="rounded-lg px-3 py-2 hover:bg-white/10">Dashboard</a>
+        <a href="dashboard.html" class="rounded-lg px-3 py-2 hover:bg-white/10">New flipbook</a>
+        <span class="rounded-lg bg-white/20 px-3 py-2">Edit</span>
+        <a href="account.html" class="rounded-lg px-3 py-2 hover:bg-white/10">Account</a>
+        <a href="settings.html" id="header-settings-link" class="hidden rounded-lg px-3 py-2 hover:bg-white/10">Settings</a>
+        <button id="header-signout" type="button" class="rounded-lg px-3 py-2 hover:bg-white/10">Logout</button>
+      </nav>
     </div>
   </header>
 
-  <main class="mx-auto max-w-3xl px-4 py-10">
-    <p><a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-emerald-700">&larr; My flipbooks</a></p>
-    <h1 class="mt-2 text-2xl font-bold">Design</h1>
-    <p id="design-for" class="mt-1 text-sm text-slate-500">Loading…</p>
+  <div class="flex min-h-[calc(100vh-52px)]">
+    <!-- Left sidebar: Share / Save + STYLE + SETTINGS (Heyzine editor) -->
+    <aside class="flex w-60 shrink-0 flex-col gap-1 border-r border-slate-200 bg-[#fafaf9] p-3">
+      <div class="flex gap-2">
+        <a id="design-share" href="#" class="flex-1 rounded-lg bg-[#19A975] px-3 py-2 text-center text-sm font-medium text-white hover:bg-[#148a61]">Share</a>
+        <button id="design-save-side" type="button" class="flex-1 rounded-lg bg-[#19A975] px-3 py-2 text-sm font-medium text-white hover:bg-[#148a61]">Save</button>
+      </div>
 
-    <p id="design-error" class="mt-4 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
+      <p class="mt-4 px-1 text-xs font-bold uppercase tracking-wide text-slate-500">Style</p>
+      <nav class="flex flex-col gap-1" id="editor-nav">
+        <button type="button" data-section="sec-title" class="editor-nav-btn flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">A</span> Title</button>
+        <button type="button" data-section="sec-view" class="editor-nav-btn flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#128214;</span> Page Effect</button>
+        <button type="button" data-section="sec-bg" class="editor-nav-btn flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#127912;</span> Background</button>
+        <button type="button" data-section="sec-controls" class="editor-nav-btn flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#9881;</span> Controls</button>
+        <button type="button" data-section="sec-toc" class="editor-nav-btn flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#128278;</span> Table of contents</button>
+        <button type="button" data-section="sec-audio" class="editor-nav-btn flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-left text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#9834;</span> Background Audio</button>
+      </nav>
 
-    <form id="design-form" class="mt-6 hidden space-y-8" novalidate>
-      <!-- Title -->
-      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="font-semibold">Title</h2>
-        <p class="mt-1 text-sm text-slate-500">Shown on the flipbook's background when "Show titles" is on.</p>
-        <div class="mt-4 space-y-4">
-          <div>
-            <label for="d-title" class="block text-sm font-medium text-slate-700">Title</label>
-            <input id="d-title" type="text" maxlength="120" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label for="d-subtitle" class="block text-sm font-medium text-slate-700">Subtitle</label>
-            <input id="d-subtitle" type="text" maxlength="160" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none">
-          </div>
-          <div>
-            <label for="d-description" class="block text-sm font-medium text-slate-700">Description</label>
-            <textarea id="d-description" rows="3" maxlength="400" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-emerald-500 focus:outline-none"></textarea>
-          </div>
-          <label class="flex items-center gap-2 text-sm text-slate-700">
-            <input id="d-show-titles" type="checkbox" class="accent-emerald-600"> Show titles on the flipbook's background
-          </label>
+      <p class="mt-4 px-1 text-xs font-bold uppercase tracking-wide text-slate-500">Settings</p>
+      <nav class="flex flex-col gap-1">
+        <a id="nav-settings" href="settings.html" class="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#128272;</span> Password protect</a>
+        <a id="nav-lead" href="settings.html" class="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#128100;</span> Capture lead form</a>
+        <a id="nav-replace" href="settings.html" class="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#8635;</span> Replace PDF</a>
+        <a id="nav-copy" href="settings.html" class="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200 hover:bg-slate-50"><span class="w-5 text-center text-[#19A975]">&#128203;</span> Copy flipbook</a>
+      </nav>
+
+      <p class="mt-auto px-1 pt-6 text-xs text-slate-400">Powered by<br><span class="font-semibold text-slate-500">Flipbook Reference</span></p>
+    </aside>
+
+    <!-- Center: live preview on the slate background + the form -->
+    <main class="min-w-0 flex-1">
+      <div class="flex items-center justify-between gap-3 px-4 pt-4">
+        <div class="min-w-0">
+          <p><a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-[#19A975]">&larr; My flipbooks</a></p>
+          <h1 class="mt-1 truncate text-xl font-bold">Design</h1>
+          <p id="design-for" class="text-sm text-slate-500">Loading…</p>
         </div>
-      </section>
+        <p id="design-status" class="shrink-0 text-sm text-slate-500"></p>
+      </div>
+      <p id="design-error" class="mx-4 mt-3 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
 
-      <!-- Table of contents -->
-      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="font-semibold">Table of contents</h2>
-        <p class="mt-1 text-sm text-slate-500">Index items readers see in the Contents panel. Each item jumps to its page.</p>
-        <div id="toc-items" class="mt-4 space-y-2"></div>
-        <button id="toc-add" type="button" class="mt-3 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">+ Add index item</button>
-      </section>
+      <!-- Live preview (Heyzine editor center): first page on the design background -->
+      <div id="editor-preview" class="mx-4 mt-4 flex h-64 items-center justify-center overflow-hidden rounded-xl bg-[#6C7A89] shadow-inner">
+        <canvas id="preview-canvas" class="max-h-full max-w-full rounded shadow-lg"></canvas>
+        <p id="preview-empty" class="text-sm text-white/70">Preview loading…</p>
+      </div>
 
-      <!-- Background -->
-      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="font-semibold">Background</h2>
-        <p class="mt-1 text-sm text-slate-500">The backdrop behind the book in the reader.</p>
-        <div class="mt-4 flex gap-2" role="tablist" aria-label="Background type">
-          <button type="button" data-bgtype="color" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Color</button>
-          <button type="button" data-bgtype="image" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Image</button>
-          <button type="button" data-bgtype="gradient" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Gradient</button>
-        </div>
-
-        <div id="bg-color-pane" class="mt-4">
-          <p class="text-sm font-medium text-slate-700">Color</p>
-          <div id="bg-swatches" class="mt-2 flex flex-wrap gap-2"></div>
-          <div class="mt-3 flex items-center gap-2">
-            <label for="d-bg-color" class="text-sm text-slate-600">Custom</label>
-            <input id="d-bg-color" type="color" value="#f1f5f9" class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white">
-            <span id="d-bg-color-hex" class="text-sm text-slate-500">#f1f5f9</span>
+      <form id="design-form" class="mx-auto mt-6 hidden max-w-3xl space-y-6 px-4 pb-12" novalidate>
+        <!-- Title -->
+        <section id="sec-title" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="font-semibold">Title</h2>
+          <p class="mt-1 text-sm text-slate-500">Shown on the flipbook's background when "Show titles" is on.</p>
+          <div class="mt-4 space-y-4">
+            <div>
+              <label for="d-title" class="block text-sm font-medium text-slate-700">Title</label>
+              <input id="d-title" type="text" maxlength="120" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-[#19A975] focus:outline-none">
+            </div>
+            <div>
+              <label for="d-subtitle" class="block text-sm font-medium text-slate-700">Subtitle</label>
+              <input id="d-subtitle" type="text" maxlength="160" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-[#19A975] focus:outline-none">
+            </div>
+            <div>
+              <label for="d-description" class="block text-sm font-medium text-slate-700">Description</label>
+              <textarea id="d-description" rows="3" maxlength="400" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-[#19A975] focus:outline-none"></textarea>
+            </div>
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+              <input id="d-show-titles" type="checkbox" class="accent-[#19A975]"> Show titles on the flipbook's background
+            </label>
           </div>
-        </div>
+        </section>
 
-        <div id="bg-image-pane" class="mt-4 hidden">
-          <p class="text-sm font-medium text-slate-700">Image</p>
-          <div class="mt-2 flex items-center gap-3">
-            <label for="d-bg-image" class="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Choose an image</label>
-            <input id="d-bg-image" type="file" accept="image/*" class="hidden">
-            <button id="d-bg-image-remove" type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50">Remove</button>
-          </div>
-          <p id="d-bg-image-name" class="mt-2 text-sm text-slate-500">No image chosen.</p>
-        </div>
-
-        <div id="bg-gradient-pane" class="mt-4 hidden">
-          <p class="text-sm font-medium text-slate-700">Gradient</p>
-          <div id="bg-gradients" class="mt-2 flex flex-wrap gap-2"></div>
-        </div>
-
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label for="d-bg-size" class="block text-sm font-medium text-slate-700">Size (image)</label>
-            <select id="d-bg-size" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
-              <option value="cover">Cover</option>
-              <option value="contain">Contain</option>
-              <option value="stretch">Stretch</option>
+        <!-- Page Effect (default view mode) -->
+        <section id="sec-view" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="font-semibold">Page Effect</h2>
+          <p class="mt-1 text-sm text-slate-500">How the flipbook turns pages when a reader first opens it. Readers can still switch views in the reader.</p>
+          <div class="mt-4">
+            <label for="d-view-mode" class="block text-sm font-medium text-slate-700">Default view</label>
+            <select id="d-view-mode" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+              <option value="magazine">Magazine (page flip)</option>
+              <option value="slider">Slider</option>
+              <option value="fade">Fade</option>
+              <option value="coverflow">Coverflow</option>
+              <option value="onepage">One page</option>
             </select>
           </div>
-          <div>
-            <label for="d-bg-position" class="block text-sm font-medium text-slate-700">Position (image)</label>
-            <select id="d-bg-position" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
-              <option value="center">Center</option>
-              <option value="top">Top</option>
-              <option value="bottom">Bottom</option>
-              <option value="left">Left</option>
-              <option value="right">Right</option>
-              <option value="top left">Top left</option>
-              <option value="top right">Top right</option>
-              <option value="bottom left">Bottom left</option>
-              <option value="bottom right">Bottom right</option>
-            </select>
-          </div>
-          <div>
-            <label for="d-bg-transparency" class="block text-sm font-medium text-slate-700">Transparency <span id="d-bg-transparency-val" class="text-slate-500">100%</span></label>
-            <input id="d-bg-transparency" type="range" min="0" max="100" value="100" class="mt-2 w-full accent-emerald-600">
-          </div>
-          <div>
-            <label for="d-bg-blur" class="block text-sm font-medium text-slate-700">Blur <span id="d-bg-blur-val" class="text-slate-500">0px</span></label>
-            <input id="d-bg-blur" type="range" min="0" max="20" value="0" class="mt-2 w-full accent-emerald-600">
-          </div>
-        </div>
+        </section>
 
-        <div class="mt-5">
-          <p class="text-sm font-medium text-slate-700">Preview</p>
-          <div id="bg-preview" class="mt-2 flex h-32 items-center justify-center overflow-hidden rounded-xl border border-slate-200 text-sm text-slate-500">Background preview</div>
-        </div>
-      </section>
+        <!-- Table of contents -->
+        <section id="sec-toc" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="font-semibold">Table of contents</h2>
+          <p class="mt-1 text-sm text-slate-500">Index items readers see in the Contents panel. Each item jumps to its page.</p>
+          <div id="toc-items" class="mt-4 space-y-2"></div>
+          <button id="toc-add" type="button" class="mt-3 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">+ Add index item</button>
+        </section>
 
-      <!-- Controls -->
-      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="font-semibold">Background audio</h2>
-        <p class="mt-1 text-sm text-slate-500">Music that plays on a loop while the flipbook is open.</p>
-        <div class="mt-4 space-y-3">
-          <label class="flex items-center gap-2 text-sm text-slate-700">
-            <input id="design-audio-enabled" type="checkbox" class="accent-emerald-600"> Play background audio while reading
-          </label>
-          <label class="flex items-center gap-2 text-sm text-slate-700">
-            <input id="design-flip-sound" type="checkbox" class="accent-emerald-600" checked> Play a sound on page turn
-          </label>
-          <div>
-            <label for="design-audio-file" class="block text-sm font-medium text-slate-700">Audio file (mp3, wav, ogg)</label>
-            <input id="design-audio-file" type="file" accept="audio/*" class="mt-1 block w-full text-sm text-slate-600">
+        <!-- Background -->
+        <section id="sec-bg" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="font-semibold">Background</h2>
+          <p class="mt-1 text-sm text-slate-500">The backdrop behind the book in the reader.</p>
+          <div class="mt-4 flex gap-2" role="tablist" aria-label="Background type">
+            <button type="button" data-bgtype="color" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Color</button>
+            <button type="button" data-bgtype="image" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Image</button>
+            <button type="button" data-bgtype="gradient" class="bgtype-btn rounded-lg border px-4 py-2 text-sm font-medium">Gradient</button>
           </div>
-          <p id="design-audio-current" class="text-sm text-slate-500"></p>
-          <div class="flex items-center gap-3">
-            <button id="design-audio-upload" type="button" class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">Upload audio</button>
-            <button id="design-audio-remove" type="button" class="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">Remove audio</button>
-            <p id="design-audio-status" class="text-sm text-slate-500"></p>
-          </div>
-        </div>
-      </section>
 
-      <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="font-semibold">Controls</h2>
-        <p class="mt-1 text-sm text-slate-500">Which buttons the reader shows.</p>
-        <div class="mt-4 grid gap-2 sm:grid-cols-2">
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="fullscreen" class="accent-emerald-600"> Fullscreen button</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="zoom" class="accent-emerald-600"> Zoom buttons</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="prevNext" class="accent-emerald-600"> Prev / Next buttons</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="thumbnails" class="accent-emerald-600"> Thumbnails button</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="firstPage" class="accent-emerald-600"> First page button</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="lastPage" class="accent-emerald-600"> Last page button</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="share" class="accent-emerald-600"> Share button</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="download" class="accent-emerald-600"> Download (in Share dialog)</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="print" class="accent-emerald-600"> Print (in Share dialog)</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="toc" class="accent-emerald-600"> Contents button</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="search" class="accent-emerald-600"> Search button</label>
-          <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="bookmarks" class="accent-emerald-600"> Bookmark button</label>
-        </div>
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label for="d-btn-size" class="block text-sm font-medium text-slate-700">Button size</label>
-            <select id="d-btn-size" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
-              <option value="small">Small</option>
-              <option value="medium">Medium</option>
-              <option value="large">Large</option>
-            </select>
-          </div>
-          <div>
-            <label for="d-accent" class="block text-sm font-medium text-slate-700">Accent color</label>
-            <div class="mt-1 flex items-center gap-2">
-              <input id="d-accent" type="color" value="#059669" class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white">
-              <span id="d-accent-hex" class="text-sm text-slate-500">#059669</span>
+          <div id="bg-color-pane" class="mt-4">
+            <p class="text-sm font-medium text-slate-700">Color</p>
+            <div id="bg-swatches" class="mt-2 flex flex-wrap gap-2"></div>
+            <div class="mt-3 flex items-center gap-2">
+              <label for="d-bg-color" class="text-sm text-slate-600">Custom</label>
+              <input id="d-bg-color" type="color" value="#f1f5f9" class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white">
+              <span id="d-bg-color-hex" class="text-sm text-slate-500">#f1f5f9</span>
             </div>
           </div>
-        </div>
-      </section>
 
-      <div class="flex flex-wrap items-center gap-3">
-        <button id="design-save" type="submit" class="rounded-lg bg-emerald-600 px-6 py-2.5 font-medium text-white hover:bg-emerald-700">Save design</button>
-        <a id="design-view" href="#" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 font-medium text-slate-700 hover:bg-slate-100">View flipbook</a>
-        <p id="design-status" class="text-sm text-slate-500"></p>
-      </div>
-    </form>
-  </main>
+          <div id="bg-image-pane" class="mt-4 hidden">
+            <p class="text-sm font-medium text-slate-700">Image</p>
+            <div class="mt-2 flex items-center gap-3">
+              <label for="d-bg-image" class="cursor-pointer rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Choose an image</label>
+              <input id="d-bg-image" type="file" accept="image/*" class="hidden">
+              <button id="d-bg-image-remove" type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50">Remove</button>
+            </div>
+            <p id="d-bg-image-name" class="mt-2 text-sm text-slate-500">No image chosen.</p>
+          </div>
+
+          <div id="bg-gradient-pane" class="mt-4 hidden">
+            <p class="text-sm font-medium text-slate-700">Gradient</p>
+            <div id="bg-gradients" class="mt-2 flex flex-wrap gap-2"></div>
+          </div>
+
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="d-bg-size" class="block text-sm font-medium text-slate-700">Size (image)</label>
+              <select id="d-bg-size" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                <option value="cover">Cover</option>
+                <option value="contain">Contain</option>
+                <option value="stretch">Stretch</option>
+              </select>
+            </div>
+            <div>
+              <label for="d-bg-position" class="block text-sm font-medium text-slate-700">Position (image)</label>
+              <select id="d-bg-position" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                <option value="center">Center</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+                <option value="top left">Top left</option>
+                <option value="top right">Top right</option>
+                <option value="bottom left">Bottom left</option>
+                <option value="bottom right">Bottom right</option>
+              </select>
+            </div>
+            <div>
+              <label for="d-bg-transparency" class="block text-sm font-medium text-slate-700">Transparency <span id="d-bg-transparency-val" class="text-slate-500">100%</span></label>
+              <input id="d-bg-transparency" type="range" min="0" max="100" value="100" class="mt-2 w-full accent-[#19A975]">
+            </div>
+            <div>
+              <label for="d-bg-blur" class="block text-sm font-medium text-slate-700">Blur <span id="d-bg-blur-val" class="text-slate-500">0px</span></label>
+              <input id="d-bg-blur" type="range" min="0" max="20" value="0" class="mt-2 w-full accent-[#19A975]">
+            </div>
+          </div>
+
+          <div class="mt-5">
+            <p class="text-sm font-medium text-slate-700">Preview</p>
+            <div id="bg-preview" class="mt-2 flex h-32 items-center justify-center overflow-hidden rounded-xl border border-slate-200 text-sm text-slate-500">Background preview</div>
+          </div>
+        </section>
+
+        <!-- Background audio -->
+        <section id="sec-audio" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="font-semibold">Background audio</h2>
+          <p class="mt-1 text-sm text-slate-500">Music that plays on a loop while the flipbook is open.</p>
+          <div class="mt-4 space-y-3">
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+              <input id="design-audio-enabled" type="checkbox" class="accent-[#19A975]"> Play background audio while reading
+            </label>
+            <label class="flex items-center gap-2 text-sm text-slate-700">
+              <input id="design-flip-sound" type="checkbox" class="accent-[#19A975]" checked> Play a sound on page turn
+            </label>
+            <div>
+              <label for="design-audio-file" class="block text-sm font-medium text-slate-700">Audio file (mp3, wav, ogg)</label>
+              <input id="design-audio-file" type="file" accept="audio/*" class="mt-1 block w-full text-sm text-slate-600">
+            </div>
+            <p id="design-audio-current" class="text-sm text-slate-500"></p>
+            <div class="flex items-center gap-3">
+              <button id="design-audio-upload" type="button" class="rounded-lg bg-[#19A975] px-4 py-2 text-sm font-medium text-white hover:bg-[#148a61]">Upload audio</button>
+              <button id="design-audio-remove" type="button" class="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">Remove audio</button>
+              <p id="design-audio-status" class="text-sm text-slate-500"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Controls -->
+        <section id="sec-controls" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 class="font-semibold">Controls</h2>
+          <p class="mt-1 text-sm text-slate-500">Which buttons the reader shows.</p>
+          <div class="mt-4 grid gap-2 sm:grid-cols-2">
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="fullscreen" class="accent-[#19A975]"> Fullscreen button</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="zoom" class="accent-[#19A975]"> Zoom buttons</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="prevNext" class="accent-[#19A975]"> Prev / Next buttons</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="thumbnails" class="accent-[#19A975]"> Thumbnails button</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="firstPage" class="accent-[#19A975]"> First page button</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="lastPage" class="accent-[#19A975]"> Last page button</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="share" class="accent-[#19A975]"> Share button</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="download" class="accent-[#19A975]"> Download (in Share dialog)</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="print" class="accent-[#19A975]"> Print (in Share dialog)</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="toc" class="accent-[#19A975]"> Contents button</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="search" class="accent-[#19A975]"> Search button</label>
+            <label class="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" data-show="bookmarks" class="accent-[#19A975]"> Bookmark button</label>
+          </div>
+          <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+              <label for="d-btn-size" class="block text-sm font-medium text-slate-700">Button size</label>
+              <select id="d-btn-size" class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+            <div>
+              <label for="d-accent" class="block text-sm font-medium text-slate-700">Accent color</label>
+              <div class="mt-1 flex items-center gap-2">
+                <input id="d-accent" type="color" value="#19A975" class="h-9 w-12 cursor-pointer rounded border border-slate-300 bg-white">
+                <span id="d-accent-hex" class="text-sm text-slate-500">#19A975</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <button id="design-save" type="submit" class="rounded-lg bg-[#19A975] px-6 py-2.5 font-medium text-white hover:bg-[#148a61]">Save design</button>
+          <a id="design-view" href="#" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 font-medium text-slate-700 hover:bg-slate-100">View flipbook</a>
+        </div>
+      </form>
+    </main>
+  </div>
 </body>
 </html>
