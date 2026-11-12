@@ -395,6 +395,10 @@
       b.classList.toggle('text-white', on);
       b.classList.toggle('bg-white', !on);
       b.classList.toggle('text-slate-700', !on);
+      /* Hover must not wash out the active green (white text on a pale
+         hover background is unreadable while the pointer is still on it). */
+      b.classList.toggle('hover:bg-[#148a61]', on);
+      b.classList.toggle('hover:bg-slate-50', !on);
       var icon = b.querySelector('span');
       if (icon) {
         icon.classList.toggle('text-white', on);
