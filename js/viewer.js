@@ -857,7 +857,8 @@
     turnDir = dir || (index > viewIndex ? 'next' : 'prev');
     viewIndex = index;
     renderView(from);
-    playFlipSound();
+    /* No turn sound here — the sound plays in Magazine mode only,
+       from the StPageFlip 'flip' event. */
   }
 
   function goToPage(page) {
