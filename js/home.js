@@ -46,7 +46,7 @@
         var open = document.createElement('a');
         open.className = 'inline-block rounded-lg px-3 py-1.5 text-sm font-medium text-white';
         open.style.background = GREEN;
-        open.href = 'viewer.html?id=' + row.id;
+        open.href = 'viewer.html?id=' + row.id + '&v=ui6';
         open.textContent = 'Open';
         actions.appendChild(open);
         body.appendChild(h3); body.appendChild(meta); body.appendChild(actions);
@@ -166,7 +166,7 @@
       });
       if (insertRes.error) throw insertRes.error;
       setHeroProgress(100, 'Done.');
-      window.location.href = 'viewer.html?id=' + flipbookId;
+      window.location.href = 'viewer.html?id=' + flipbookId + '&v=ui6';
     } catch (err) {
       showHeroError(err && err.message ? err.message : 'Upload failed. Please try again.');
     } finally {

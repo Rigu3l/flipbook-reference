@@ -193,7 +193,7 @@
     } else {
       var open = document.createElement('a');
       open.className = 'rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700';
-      open.href = 'viewer.html?id=' + row.id;
+      open.href = 'viewer.html?id=' + row.id + '&v=ui6';
       open.textContent = 'Open';
       var designLink = document.createElement('a');
       designLink.className = 'rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100';
