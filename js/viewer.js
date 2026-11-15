@@ -842,7 +842,7 @@
     zoomFitBtn.disabled = cf;
     var hash = '#page/' + first;
     if (window.location.hash !== hash) history.replaceState(null, '', hash);
-    document.title = (book ? book.title + ' — ' : '') + 'Flipbook Reference';
+    document.title = (book ? book.title + ' — ' : '') + 'Manuazine V2';
     highlightThumb();
     updateBookmarkBtn();
   }

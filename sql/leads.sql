@@ -1,5 +1,5 @@
 -- F9 lead form — one-time setup. Run this ONCE in the Supabase
--- dashboard (SQL editor) for the flipbook-reference / Manuazine project.
+-- dashboard (SQL editor) for the Manuazine V2 project.
 -- It creates a leads table + a submit_lead RPC. Anonymous readers can
 -- submit a lead through the RPC only (they cannot read or write the
 -- table directly); owners can read leads for their own flipbooks.
