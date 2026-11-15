@@ -11,7 +11,7 @@
   <script src="js/vendor/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js?v=ui1" defer></script>
-  <script src="js/viewer.js?v=ui2" defer></script>
+  <script src="js/viewer.js?v=ui3" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
@@ -23,6 +23,12 @@
     @media (hover: hover) {
       #book-wrap:hover #book { transform: translateY(-6px); box-shadow: 0 30px 60px rgba(0,0,0,.55); }
     }
+    /* When a left sidebar panel is open, the title pill slides right so
+       it sits beside the panel instead of covering it (thumbs panel is
+       176px wide, contents panel 288px, plus the 16px gap). */
+    #title-block { transition: left .25s ease; }
+    #title-block.panel-thumbs { left: 12rem; }
+    #title-block.panel-toc { left: 19rem; }
     #book .page { background: #fff; }
     #book img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .flip-spine { position: absolute; width: 26px; background: linear-gradient(to right, transparent, rgba(0,0,0,.14), transparent); pointer-events: none; }
@@ -48,7 +54,7 @@
        controls live in a floating pill top-right.
        The title sits on a dark translucent pill, so the white text stays
        readable on any book background — light or dark. -->
-  <div class="pointer-events-none fixed left-4 top-4 z-40 rounded-xl bg-black/50 px-4 py-2 backdrop-blur-sm">
+  <div id="title-block" class="pointer-events-none fixed left-4 top-4 z-40 rounded-xl bg-black/50 px-4 py-2 backdrop-blur-sm">
     <a href="index.html" class="pointer-events-auto text-sm font-medium text-white/80 hover:text-white">&larr; All flipbooks</a>
     <h1 id="viewer-title" class="mt-1 max-w-md truncate text-lg font-semibold text-white">Loading…</h1>
     <span id="page-label" class="text-sm text-white/70"></span>

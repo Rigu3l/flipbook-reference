@@ -47,6 +47,7 @@
   var bookEl = document.getElementById('book');
   var coverflowEl = document.getElementById('coverflow');
   var toolbarEl = document.getElementById('toolbar');
+  var titleBlock = document.getElementById('title-block');
   var controlsEl = document.getElementById('controls');
   var hintEl = document.getElementById('hint');
   var prevBtn = document.getElementById('btn-prev');
@@ -942,16 +943,25 @@
   });
 
   /* ---- Thumbnails ---- */
+  /* Slide the title pill right when a left sidebar panel is open, so it
+     sits beside the panel instead of covering it. */
+  function syncTitleOffset() {
+    if (!titleBlock) return;
+    titleBlock.classList.toggle('panel-thumbs', thumbsOpen);
+    titleBlock.classList.toggle('panel-toc', tocOpen);
+  }
   function closeThumbs() {
     thumbsOpen = false;
     if (thumbsBtn) thumbsBtn.setAttribute('aria-expanded', 'false');
     thumbsPanel.classList.add('hidden');
+    syncTitleOffset();
   }
   function toggleThumbs() {
     thumbsOpen = !thumbsOpen;
     thumbsBtn.setAttribute('aria-expanded', String(thumbsOpen));
     thumbsPanel.classList.toggle('hidden', !thumbsOpen);
     if (thumbsOpen) { renderThumbs(); if (tocOpen) toggleToc(false); }
+    syncTitleOffset();
   }
   thumbsBtn.addEventListener('click', toggleThumbs);
 
@@ -1326,6 +1336,7 @@
     if (tocBtn) tocBtn.setAttribute('aria-expanded', String(tocOpen));
     tocPanel.classList.toggle('hidden', !tocOpen);
     if (tocOpen) { setTocTab(tocTab); closeThumbs(); }
+    syncTitleOffset();
   }
   function toggleBookmark() {
     var pageNum = currentPages()[0] || 1;
