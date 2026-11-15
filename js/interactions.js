@@ -36,7 +36,7 @@
     book = res.data;
     if (!book) { showError('This flipbook was not found, or it is not yours.'); return; }
     $('#page-title').textContent = 'Interactions — ' + (book.title || 'Untitled');
-    $('#view-link').href = 'viewer.html?id=' + book.id + '&v=ui8';
+    $('#view-link').href = 'viewer.html?id=' + book.id + '&v=ui9';
     /* Load the design sidecar (preserve everything else; only
        interactions are edited here). */
     design = { interactions: [] };
