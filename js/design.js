@@ -316,16 +316,25 @@
     }
   }
 
-  /* ---- Live preview: the book's first page on the design background. ---- */
+  /* ---- Live preview: the book's first page on the design background.
+     It is sized to fit the preview container, so the manual occupies the
+     space instead of sitting small in a fixed strip. ---- */
+  var previewDoc = null; /* cached PDF.js document for the preview */
   async function renderPreview() {
     var canvas = document.getElementById('preview-canvas');
     var empty = document.getElementById('preview-empty');
     if (!canvas || !book || !window.pdfjsLib) return;
     try {
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'js/vendor/pdf.worker.min.js';
-      var pdf = await window.pdfjsLib.getDocument(window.publicPdfUrl(book.file_path)).promise;
-      var page = await pdf.getPage(1);
-      var viewport = page.getViewport({ scale: 0.5 });
+      if (!previewDoc) previewDoc = await window.pdfjsLib.getDocument(window.publicPdfUrl(book.file_path)).promise;
+      var page = await previewDoc.getPage(1);
+      var box = document.getElementById('editor-preview');
+      var base = page.getViewport({ scale: 1 });
+      var availW = Math.max(50, box.clientWidth - 32);
+      var availH = Math.max(50, box.clientHeight - 32);
+      var scale = Math.min(availW / base.width, availH / base.height);
+      scale = Math.max(0.2, Math.min(scale, 3));
+      var viewport = page.getViewport({ scale: scale });
       canvas.width = Math.floor(viewport.width);
       canvas.height = Math.floor(viewport.height);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
@@ -335,6 +344,12 @@
       if (empty) empty.textContent = 'Preview unavailable.';
     }
   }
+  /* Re-fit the preview when the window is resized. */
+  var previewResizeTimer = null;
+  window.addEventListener('resize', function () {
+    if (previewResizeTimer) clearTimeout(previewResizeTimer);
+    previewResizeTimer = setTimeout(renderPreview, 200);
+  });
 
   async function save(e) {
     e.preventDefault();

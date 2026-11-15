@@ -9,7 +9,7 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js?v=ui1" defer></script>
-  <script src="js/design.js?v=ui4" defer></script>
+  <script src="js/design.js?v=ui5" defer></script>
 </head>
 <body class="bg-[#f4f4f1] text-slate-900">
   <!-- Heyzine-style green editor header -->
@@ -61,7 +61,7 @@
     </aside>
 
     <!-- Center: live preview on the slate background + the form -->
-    <main class="min-w-0 flex-1">
+    <main class="flex min-w-0 flex-1 flex-col">
       <div class="flex items-center justify-between gap-3 px-4 pt-4">
         <div class="min-w-0">
           <p><a href="dashboard.html" class="text-sm font-medium text-slate-600 hover:text-[#19A975]">&larr; My flipbooks</a></p>
@@ -72,8 +72,9 @@
       </div>
       <p id="design-error" class="mx-4 mt-3 hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"></p>
 
-      <!-- Live preview (Heyzine editor center): first page on the design background -->
-      <div id="editor-preview" class="mx-4 mt-4 flex h-64 items-center justify-center overflow-hidden rounded-xl bg-[#6C7A89] shadow-inner">
+      <!-- Live preview (Heyzine editor center): first page on the design background.
+           It grows to fill the main area, so the manual occupies the space. -->
+      <div id="editor-preview" class="mx-4 mt-4 flex min-h-64 flex-1 items-center justify-center overflow-hidden rounded-xl bg-[#6C7A89] shadow-inner">
         <canvas id="preview-canvas" class="max-h-full max-w-full rounded shadow-lg"></canvas>
         <p id="preview-empty" class="text-sm text-white/70">Preview loading…</p>
       </div>
