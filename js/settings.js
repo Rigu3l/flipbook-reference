@@ -31,10 +31,10 @@
     if (res.error) throw res.error;
     book = res.data;
     if (!book) { showError('This flipbook was not found, or it is not yours.'); return; }
-    $('#settings-title').textContent = 'Settings — ' + (book.title || 'Untitled');
+    $('#settings-title').textContent = 'Settings | ' + (book.title || 'Untitled');
     $('#settings-view').href = 'viewer.html?id=' + book.id + '&v=ui11';
     /* Password state (has_password is not exposed to the owner row, so
-       check the hash column directly — the owner can read their own row). */
+       check the hash column directly - the owner can read their own row). */
     var pwRes = await window.fbClient.from('flipbooks')
       .select('password_hash').eq('id', id).eq('user_id', user.id).maybeSingle();
     var hasPw = !!(pwRes.data && pwRes.data.password_hash);
@@ -106,7 +106,7 @@
       design.leadForm.enabled = $('#st-lead-enabled').checked;
       await saveDesignSidecar();
       status.textContent = design.leadForm.enabled
-        ? 'Lead form is on — readers will enter their name and email first.'
+        ? 'Lead form is on. Readers will enter their name and email first.'
         : 'Lead form is off.';
       showToast('Lead form setting saved.', 'success');
     } catch (e) {
@@ -143,7 +143,7 @@
         box.appendChild(row);
       });
     } catch (e) {
-      box.innerHTML = '<p class="text-sm text-slate-500">Leads need a one-time setup — run sql/leads.sql in the Supabase SQL editor first.</p>';
+      box.innerHTML = '<p class="text-sm text-slate-500">Leads need a one-time setup. Run sql/leads.sql in the Supabase SQL editor first.</p>';
     }
   }
 
@@ -194,7 +194,7 @@
         .update({ page_count: newCount }).eq('id', book.id).eq('user_id', user.id);
       if (upd.error) throw upd.error;
       book.page_count = newCount;
-      status.textContent = 'PDF replaced — now ' + newCount + ' pages.';
+      status.textContent = 'PDF replaced, now ' + newCount + ' pages.';
       showToast('PDF replaced.', 'success');
     } catch (e) {
       status.textContent = 'Could not replace the PDF: ' + (e.message || e);
@@ -237,7 +237,7 @@
           .upload(user.id + '/' + newId + '.design.json', blob, { upsert: true, contentType: 'application/json' });
         if (up.error) throw up.error;
       }
-      status.textContent = 'Copied — find it on the dashboard as "Copy of ' + (book.title || 'Untitled') + '".';
+      status.textContent = 'Copied. Find it on the dashboard as "Copy of ' + (book.title || 'Untitled') + '".';
       showToast('Flipbook copied.', 'success');
     } catch (e) {
       status.textContent = 'Could not copy: ' + (e.message || e);

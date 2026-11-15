@@ -1,5 +1,5 @@
 /* Reader core + navigation + viewer modes: PDF.js rendering, spreads,
-   thumbnails, zoom, fullscreen, page slider, and five view modes —
+   thumbnails, zoom, fullscreen, page slider, and five view modes:
    Magazine (page flip), Slider, Fade, Coverflow, One page.
    Cover shows alone; spreads show pairs on wide screens, one page at
    a time on narrow screens. */
@@ -83,7 +83,7 @@
 
   /* ---- F5 design (per-book settings, saved by the owner in the
      design editor). Stored as a JSON sidecar in Storage next to the
-     PDF: {user_id}/{flipbook_id}.design.json — public read, so any
+     PDF: {user_id}/{flipbook_id}.design.json - public read, so any
      viewer sees the owner's design; no table migration needed. */
   var design = null;
   function designDefaults() {
@@ -121,7 +121,7 @@
       var url = window.publicPdfUrl(designPath());
       if (!url) return;
       var res = await fetch(url, { cache: 'no-store' });
-      if (!res.ok) return; /* no design saved yet — defaults stand */
+      if (!res.ok) return; /* no design saved yet - defaults stand */
       var saved = await res.json();
       if (saved && typeof saved === 'object') {
         design.subtitle = saved.subtitle || '';
@@ -140,7 +140,7 @@
           if (saved.controls.accent) design.controls.accent = saved.controls.accent;
         }
       }
-    } catch (e) { /* unreadable design — defaults stand */ }
+    } catch (e) { /* unreadable design - defaults stand */ }
   }
   function applyDesign() {
     if (!design) design = designDefaults();
@@ -242,7 +242,7 @@
       if (!ctx) return;
       if (ctx.state === 'suspended') ctx.resume();
       if (flipBuffer) {
-        /* The MP3, decoded at init — starts the moment the turn does. */
+        /* The MP3, decoded at init - starts the moment the turn does. */
         var src = ctx.createBufferSource();
         src.buffer = flipBuffer;
         var gain = ctx.createGain();
@@ -301,11 +301,11 @@
   if (soundBtn) {
     soundBtn.addEventListener('click', function () { setSound(!soundOn); });
   }
-  /* Browsers block audio until the reader interacts — start the
+  /* Browsers block audio until the reader interacts - start the
      background music on the first click/tap anywhere in the viewer. */
   document.addEventListener('pointerdown', function onFirstGesture(event) {
     if (soundOn) return;
-    /* Don't auto-enable sound when the gesture IS the Sound button —
+    /* Don't auto-enable sound when the gesture IS the Sound button -
        its own click handler toggles it, and the two would cancel out
        (first click on Sound would look like it did nothing). */
     if (soundBtn && event.target && soundBtn.contains(event.target)) return;
@@ -342,7 +342,7 @@
      inserts a blank inside-cover page after the cover: page 2 sits
      alone (paired with the blank), then pairs from 3, and the last
      page sits alone. Without this the views drift one page behind
-     the library — the label says "Pages 2–3" while only page 2
+     the library - the label says "Pages 2–3" while only page 2
      shows, Next seems dead, and the last page lands in a spread
      instead of alone. Fade has no blank page, so it keeps the
      plain pairing. */
@@ -502,7 +502,7 @@
       wrap.dataset.page = String(pages[j]);
       wrap.appendChild(canvas);
       /* Hover hint + tap/slide to turn: a right (odd) page turns forward,
-         a left (even) page turns back — only when a view exists that way.
+         a left (even) page turns back - only when a view exists that way.
          A tap turns in the page's direction; a slide over 30px turns in
          the slide direction (slide left = forward, slide right = back). */
       var n = pages[j];
@@ -522,7 +522,7 @@
       }
       stageInnerEl.appendChild(wrap);
     }
-    /* The two pages of a spread meet at the spine — no gap between
+    /* The two pages of a spread meet at the spine - no gap between
        them (the old 8px gap showed the background through the fold,
        so the gap opened, closed during the turn, and opened again).
        The spine shadow keeps the center fold readable. */
@@ -842,7 +842,7 @@
     zoomFitBtn.disabled = cf;
     var hash = '#page/' + first;
     if (window.location.hash !== hash) history.replaceState(null, '', hash);
-    document.title = (book ? book.title + ' — ' : '') + 'Manuazine V2';
+    document.title = (book ? book.title + ' | ' : '') + 'Manuazine V2';
     highlightThumb();
     updateBookmarkBtn();
   }
@@ -859,7 +859,7 @@
     turnDir = dir || (index > viewIndex ? 'next' : 'prev');
     viewIndex = index;
     renderView(from);
-    /* No turn sound here — the sound plays in Magazine mode only,
+    /* No turn sound here - the sound plays in Magazine mode only,
        from the StPageFlip 'flip' event. */
   }
 
@@ -869,7 +869,7 @@
 
   function next() {
     /* Magazine: the library's animated flip (turnToPage jumps
-       instantly with no animation — that was the dead buttons). */
+       instantly with no animation - that was the dead buttons). */
     if (mode === 'magazine' && pageFlip) {
       try { pageFlip.flipNext(); } catch (e) {}
       return;
@@ -946,7 +946,7 @@
   /* ---- Thumbnails ---- */
   /* Slide the title pill right when a left sidebar panel is open, so it
      sits beside the panel instead of covering it. The bottom-left
-     credits pill slides with it — it overlaps the panel the same way. */
+     credits pill slides with it - it overlaps the panel the same way. */
   function syncTitleOffset() {
     if (titleBlock) {
       titleBlock.classList.toggle('panel-thumbs', thumbsOpen);
@@ -1647,7 +1647,7 @@
     });
   }
   function askLead() {
-    /* Already submitted for this book on this browser — don't ask again. */
+    /* Already submitted for this book on this browser - don't ask again. */
     try { if (localStorage.getItem(leadKey())) return Promise.resolve(); } catch (e) {}
     return new Promise(function (resolve) {
       var gate = document.getElementById('lead-gate');
@@ -1682,7 +1682,7 @@
           done();
         } catch (e2) {
           /* The leads table / RPC is a one-time setup (sql/leads.sql).
-             Never block the reader — offer to continue without saving. */
+             Never block the reader - offer to continue without saving. */
           err.textContent = 'Could not save your details (the lead form needs a one-time setup). You can still read the book.';
           err.classList.remove('hidden');
           skip.classList.remove('hidden');
@@ -1730,7 +1730,7 @@
       hintEl.classList.remove('hidden');
       sliderEl.max = String(totalPages);
       renderView();
-      /* Count the view. Fire and forget — a failure here must not
+      /* Count the view. Fire and forget - a failure here must not
          block reading. */
       window.fbClient.rpc('increment_flipbook_views', { p_flipbook_id: id })
         .then(function () {}, function () {});

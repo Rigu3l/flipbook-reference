@@ -42,7 +42,7 @@
       return;
     }
     selectedFile = file;
-    fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB) — counting pages…';
+    fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB). Counting pages…';
     try {
       if (!window.pdfjsLib) throw new Error('PDF.js did not load. Check your connection and reload.');
       window.pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -141,7 +141,7 @@
       if (insertRes.error) throw insertRes.error;
       setProgress(100, 'Done.');
 
-      document.getElementById('result-title').textContent = title + ' — ' + pageCount + ' pages';
+      document.getElementById('result-title').textContent = title + ' | ' + pageCount + ' pages';
       resultBox.classList.remove('hidden');
       showToast('Flipbook created.');
       form.reset();

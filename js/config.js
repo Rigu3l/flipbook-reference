@@ -1,4 +1,4 @@
-/* Manuazine V2 — configuration.
+/* Manuazine V2 - configuration.
    Same Supabase project as Manuazine. These are PUBLIC anon-key
    values (Project Settings > API); Row Level Security controls
    what anon users can do. NEVER put the service_role key here. */

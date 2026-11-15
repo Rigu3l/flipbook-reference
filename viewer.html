@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Reader — Manuazine V2</title>
+  <title>Reader | Manuazine V2</title>
   <script src="js/vendor/tailwind.js"></script>
   <script src="js/vendor/supabase.min.js"></script>
   <script src="js/vendor/pdf.min.js"></script>
@@ -38,7 +38,7 @@
     #book img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .flip-spine { position: absolute; width: 26px; background: linear-gradient(to right, transparent, rgba(0,0,0,.14), transparent); pointer-events: none; }
     /* Turnable pages in the canvas modes: pointer cursor, click turns.
-       (No hover lift here — the hover animation lives in Magazine mode only.) */
+       (No hover lift here - the hover animation lives in Magazine mode only.) */
     #stage-inner canvas.page-turn-next, #stage-inner canvas.page-turn-prev { cursor: pointer; }
     #stage-inner.slide-next { transform: translateX(-48px); opacity: .4; }
     #stage-inner.slide-prev { transform: translateX(48px); opacity: .4; }
@@ -58,7 +58,7 @@
   <!-- Heyzine-style reader: no header bar. Title floats top-left,
        controls live in a floating pill top-right.
        The title sits on a dark translucent pill, so the white text stays
-       readable on any book background — light or dark. -->
+       readable on any book background - light or dark. -->
   <div id="title-block" class="pointer-events-none fixed left-4 top-4 z-40 rounded-xl bg-black/50 px-4 py-2 backdrop-blur-sm">
     <a href="index.html" class="pointer-events-auto text-sm font-medium text-white/80 hover:text-white">&larr; All flipbooks</a>
     <h1 id="viewer-title" class="mt-1 max-w-md truncate text-lg font-semibold text-white">Loading…</h1>
@@ -92,7 +92,7 @@
     </div>
   </div>
 
-  <!-- "Credits by" credit, bottom-left — same dark pill,
+  <!-- "Credits by" credit, bottom-left - same dark pill,
        so it stays readable on a light book background. -->
   <div id="credits-pill" class="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-xl bg-black/50 px-3 py-2 text-white/80 backdrop-blur-sm">
     <span class="flex h-8 w-8 items-center justify-center rounded-md border-2 border-white/80 text-base leading-none">&#128214;</span>

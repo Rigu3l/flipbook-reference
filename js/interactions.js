@@ -35,7 +35,7 @@
     if (res.error) throw res.error;
     book = res.data;
     if (!book) { showError('This flipbook was not found, or it is not yours.'); return; }
-    $('#page-title').textContent = 'Interactions — ' + (book.title || 'Untitled');
+    $('#page-title').textContent = 'Interactions | ' + (book.title || 'Untitled');
     $('#view-link').href = 'viewer.html?id=' + book.id + '&v=ui11';
     /* Load the design sidecar (preserve everything else; only
        interactions are edited here). */
@@ -49,7 +49,7 @@
           if (saved && typeof saved === 'object') design = saved;
         }
       }
-    } catch (e) { /* no design yet — start with interactions only */ }
+    } catch (e) { /* no design yet - start with interactions only */ }
     if (!Array.isArray(design.interactions)) design.interactions = [];
     /* Load the PDF. */
     var pdfUrl = window.publicPdfUrl(book.file_path);
@@ -124,7 +124,7 @@
       var label = document.createElement('button');
       label.type = 'button';
       label.className = 'min-w-0 flex-1 truncate text-left text-slate-700 hover:text-emerald-700';
-      label.textContent = it.type + ' — ' + summarize(it);
+      label.textContent = it.type + ' | ' + summarize(it);
       label.addEventListener('click', function () { editInteraction(it); });
       var del = document.createElement('button');
       del.type = 'button';

@@ -98,7 +98,7 @@
       return;
     }
     selectedFile = file;
-    fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB) — counting pages…';
+    fileNameEl.textContent = file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB). Counting pages…';
     fileNameEl.classList.remove('hidden');
     try {
       if (!window.pdfjsLib) throw new Error('PDF.js did not load. Check your connection and reload.');

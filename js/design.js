@@ -305,7 +305,7 @@
             }
           }
         }
-      } catch (e) { /* no saved design yet — defaults stand */ }
+      } catch (e) { /* no saved design yet - defaults stand */ }
       buildSwatches();
       fillForm();
       $('#design-form').classList.remove('hidden');
@@ -400,7 +400,7 @@
 
   /* ---- Sidebar panels: a floating popup over the main page, shown only
      when a sidebar button is clicked. It is position:fixed, so opening it
-     never pushes the page around — it floats over the preview instead.
+     never pushes the page around - it floats over the preview instead.
      Clicking the same button again, the X, or Escape closes it. ---- */
   var openSection = null; /* the section the popup is showing, or null */
 
@@ -473,7 +473,7 @@
     if (!f.type || f.type.indexOf('image/') !== 0) { showToast('Choose an image file.', 'error'); return; }
     bgImageFile = f;
     bgImageRemoved = false;
-    $('#d-bg-image-name').textContent = f.name + ' — will upload on Save.';
+    $('#d-bg-image-name').textContent = f.name + '. Will upload on Save.';
     setBgType('image');
   });
   $('#d-bg-image-remove').addEventListener('click', function () {
@@ -481,7 +481,7 @@
     bgImageRemoved = true;
     design.background.imagePath = '';
     $('#d-bg-image').value = '';
-    $('#d-bg-image-name').textContent = 'Image removed — save to apply.';
+    $('#d-bg-image-name').textContent = 'Image removed. Save to apply.';
     updatePreview();
   });
   /* ---- F10 Background audio: upload / remove (saves the sidecar too). ---- */
