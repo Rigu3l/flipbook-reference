@@ -48,6 +48,7 @@
   var coverflowEl = document.getElementById('coverflow');
   var toolbarEl = document.getElementById('toolbar');
   var titleBlock = document.getElementById('title-block');
+  var creditsPill = document.getElementById('credits-pill');
   var controlsEl = document.getElementById('controls');
   var hintEl = document.getElementById('hint');
   var prevBtn = document.getElementById('btn-prev');
@@ -944,11 +945,17 @@
 
   /* ---- Thumbnails ---- */
   /* Slide the title pill right when a left sidebar panel is open, so it
-     sits beside the panel instead of covering it. */
+     sits beside the panel instead of covering it. The bottom-left
+     credits pill slides with it — it overlaps the panel the same way. */
   function syncTitleOffset() {
-    if (!titleBlock) return;
-    titleBlock.classList.toggle('panel-thumbs', thumbsOpen);
-    titleBlock.classList.toggle('panel-toc', tocOpen);
+    if (titleBlock) {
+      titleBlock.classList.toggle('panel-thumbs', thumbsOpen);
+      titleBlock.classList.toggle('panel-toc', tocOpen);
+    }
+    if (creditsPill) {
+      creditsPill.classList.toggle('panel-thumbs', thumbsOpen);
+      creditsPill.classList.toggle('panel-toc', tocOpen);
+    }
   }
   function closeThumbs() {
     thumbsOpen = false;

@@ -11,7 +11,7 @@
   <script src="js/vendor/qrcode.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js?v=ui1" defer></script>
-  <script src="js/viewer.js?v=ui3" defer></script>
+  <script src="js/viewer.js?v=ui4" defer></script>
   <style>
     #stage-inner { transition: transform .18s ease, opacity .18s ease; }
     /* StPageFlip book (Magazine mode, same library + config as Manuazine). */
@@ -29,6 +29,11 @@
     #title-block { transition: left .25s ease; }
     #title-block.panel-thumbs { left: 12rem; }
     #title-block.panel-toc { left: 19rem; }
+    /* Same for the bottom-left credits pill, which also overlaps a
+       full-height left panel. */
+    #credits-pill { transition: left .25s ease; }
+    #credits-pill.panel-thumbs { left: 12rem; }
+    #credits-pill.panel-toc { left: 19rem; }
     #book .page { background: #fff; }
     #book img { width: 100%; height: 100%; object-fit: contain; display: block; }
     .flip-spine { position: absolute; width: 26px; background: linear-gradient(to right, transparent, rgba(0,0,0,.14), transparent); pointer-events: none; }
@@ -89,7 +94,7 @@
 
   <!-- "Credits by" credit, bottom-left — same dark pill,
        so it stays readable on a light book background. -->
-  <div class="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-xl bg-black/50 px-3 py-2 text-white/80 backdrop-blur-sm">
+  <div id="credits-pill" class="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-xl bg-black/50 px-3 py-2 text-white/80 backdrop-blur-sm">
     <span class="flex h-8 w-8 items-center justify-center rounded-md border-2 border-white/80 text-base leading-none">&#128214;</span>
     <span class="text-sm font-semibold leading-tight">Credits by:<br>Rj</span>
   </div>
