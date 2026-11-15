@@ -9,7 +9,7 @@
   <script src="js/vendor/pdf.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/app.js?v=ui1" defer></script>
-  <script src="js/design.js?v=ui3" defer></script>
+  <script src="js/design.js?v=ui4" defer></script>
 </head>
 <body class="bg-[#f4f4f1] text-slate-900">
   <!-- Heyzine-style green editor header -->
@@ -78,9 +78,14 @@
         <p id="preview-empty" class="text-sm text-white/70">Preview loading…</p>
       </div>
 
-      <form id="design-form" class="mx-auto mt-6 hidden max-w-3xl space-y-6 px-4 pb-12" novalidate>
-        <!-- Title -->
-        <section id="sec-title" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <form id="design-form" class="mx-auto mt-6 hidden max-w-3xl px-4 pb-12" novalidate>
+        <!-- Floating panel: one section at a time, shown only when a sidebar
+             button is clicked. Fixed position, so it never pushes the page
+             around — it floats over the preview instead. -->
+        <div id="design-popup" class="fixed inset-x-4 top-[72px] z-40 hidden sm:left-[272px] sm:right-auto sm:w-[560px] sm:max-w-[calc(100vw-300px)]">
+          <button id="design-popup-close" type="button" aria-label="Close panel" class="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg leading-none text-slate-500 hover:bg-slate-200 hover:text-slate-700">&times;</button>
+          <!-- Title -->
+        <section id="sec-title" class="editor-section hidden max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
           <h2 class="font-semibold">Title</h2>
           <p class="mt-1 text-sm text-slate-500">Shown on the flipbook's background when "Show titles" is on.</p>
           <div class="mt-4 space-y-4">
@@ -103,7 +108,7 @@
         </section>
 
         <!-- Page Effect (default view mode) -->
-        <section id="sec-view" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-view" class="editor-section hidden max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
           <h2 class="font-semibold">Page Effect</h2>
           <p class="mt-1 text-sm text-slate-500">How the flipbook turns pages when a reader first opens it. Readers can still switch views in the reader.</p>
           <div class="mt-4">
@@ -119,7 +124,7 @@
         </section>
 
         <!-- Table of contents -->
-        <section id="sec-toc" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-toc" class="editor-section hidden max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
           <h2 class="font-semibold">Table of contents</h2>
           <p class="mt-1 text-sm text-slate-500">Index items readers see in the Contents panel. Each item jumps to its page.</p>
           <div id="toc-items" class="mt-4 space-y-2"></div>
@@ -127,7 +132,7 @@
         </section>
 
         <!-- Background -->
-        <section id="sec-bg" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-bg" class="editor-section hidden max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
           <h2 class="font-semibold">Background</h2>
           <p class="mt-1 text-sm text-slate-500">The backdrop behind the book in the reader.</p>
           <div class="mt-4 flex gap-2" role="tablist" aria-label="Background type">
@@ -201,7 +206,7 @@
         </section>
 
         <!-- Background audio -->
-        <section id="sec-audio" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-audio" class="editor-section hidden max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
           <h2 class="font-semibold">Background audio</h2>
           <p class="mt-1 text-sm text-slate-500">Music that plays on a loop while the flipbook is open.</p>
           <div class="mt-4 space-y-3">
@@ -225,7 +230,7 @@
         </section>
 
         <!-- Controls -->
-        <section id="sec-controls" class="editor-section rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section id="sec-controls" class="editor-section hidden max-h-[calc(100vh-100px)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
           <h2 class="font-semibold">Controls</h2>
           <p class="mt-1 text-sm text-slate-500">Which buttons the reader shows.</p>
           <div class="mt-4 grid gap-2 sm:grid-cols-2">
@@ -261,7 +266,10 @@
           </div>
         </section>
 
-        <div class="flex flex-wrap items-center gap-3">
+        </div>
+
+        <p class="text-sm text-slate-500">Pick a section on the left to edit it — the panel floats over the page.</p>
+        <div class="mt-4 flex flex-wrap items-center gap-3">
           <button id="design-save" type="submit" class="rounded-lg bg-[#19A975] px-6 py-2.5 font-medium text-white hover:bg-[#148a61]">Save design</button>
           <a id="design-view" href="#" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 font-medium text-slate-700 hover:bg-slate-100">View flipbook</a>
         </div>

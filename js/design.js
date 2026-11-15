@@ -309,7 +309,7 @@
       buildSwatches();
       fillForm();
       $('#design-form').classList.remove('hidden');
-      showSection('sec-title'); /* Title is the card shown first. */
+      /* The panel stays closed until a sidebar button is clicked. */
       renderPreview();
     } catch (err) {
       showError('Could not load this flipbook: ' + (err.message || 'unknown error'));
@@ -383,14 +383,15 @@
     }
   }
 
-  /* ---- Sidebar panels: only the section whose button was clicked is
-     shown (Heyzine editor) — the rest stay hidden until picked. ---- */
-  function showSection(sectionId) {
-    $$('.editor-section').forEach(function (sec) {
-      sec.classList.toggle('hidden', sec.id !== sectionId);
-    });
+  /* ---- Sidebar panels: a floating popup over the main page, shown only
+     when a sidebar button is clicked. It is position:fixed, so opening it
+     never pushes the page around — it floats over the preview instead.
+     Clicking the same button again, the X, or Escape closes it. ---- */
+  var openSection = null; /* the section the popup is showing, or null */
+
+  function highlightNav(activeId) {
     $$('.editor-nav-btn').forEach(function (b) {
-      var on = b.dataset.section === sectionId;
+      var on = b.dataset.section === activeId;
       b.classList.toggle('bg-[#19A975]', on);
       b.classList.toggle('text-white', on);
       b.classList.toggle('bg-white', !on);
@@ -407,10 +408,30 @@
     });
   }
 
+  function showSection(sectionId) {
+    if (openSection === sectionId) { closePopup(); return; } /* toggle off */
+    openSection = sectionId;
+    $$('.editor-section').forEach(function (sec) {
+      sec.classList.toggle('hidden', sec.id !== sectionId);
+    });
+    $('#design-popup').classList.remove('hidden');
+    highlightNav(sectionId);
+  }
+  function closePopup() {
+    openSection = null;
+    $('#design-popup').classList.add('hidden');
+    highlightNav(null);
+  }
+
   /* ---- Wire up ---- */
-  /* Sidebar nav: pop up the matching section card. */
+  /* Sidebar nav: pop up the matching section as a floating panel. */
   $$('.editor-nav-btn').forEach(function (b) {
     b.addEventListener('click', function () { showSection(b.dataset.section); });
+  });
+  var popupClose = document.getElementById('design-popup-close');
+  if (popupClose) popupClose.addEventListener('click', closePopup);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closePopup();
   });
   /* Sidebar Save triggers the same save as the form button. */
   var saveSide = document.getElementById('design-save-side');
