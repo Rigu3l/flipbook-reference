@@ -43,8 +43,10 @@
 </head>
 <body class="bg-[#6C7A89] text-slate-900">
   <!-- Heyzine-style reader: no header bar. Title floats top-left,
-       controls live in a floating pill top-right. -->
-  <div class="pointer-events-none fixed left-4 top-4 z-40">
+       controls live in a floating pill top-right.
+       The title sits on a dark translucent pill, so the white text stays
+       readable on any book background — light or dark. -->
+  <div class="pointer-events-none fixed left-4 top-4 z-40 rounded-xl bg-black/50 px-4 py-2 backdrop-blur-sm">
     <a href="index.html" class="pointer-events-auto text-sm font-medium text-white/80 hover:text-white">&larr; All flipbooks</a>
     <h1 id="viewer-title" class="mt-1 max-w-md truncate text-lg font-semibold text-white">Loading…</h1>
     <span id="page-label" class="text-sm text-white/70"></span>
@@ -77,8 +79,9 @@
     </div>
   </div>
 
-  <!-- "Powered by" credit, bottom-left (Heyzine reader) -->
-  <div class="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2 text-white/80">
+  <!-- "Powered by" credit, bottom-left (Heyzine reader) — same dark pill,
+       so it stays readable on a light book background. -->
+  <div class="pointer-events-none fixed bottom-4 left-4 z-40 flex items-center gap-2 rounded-xl bg-black/50 px-3 py-2 text-white/80 backdrop-blur-sm">
     <span class="flex h-8 w-8 items-center justify-center rounded-md border-2 border-white/80 text-base leading-none">&#128214;</span>
     <span class="text-sm font-semibold leading-tight">Powered by<br>Flipbook Reference</span>
   </div>
@@ -244,7 +247,7 @@
 
   <main class="relative mx-auto flex min-h-screen w-full flex-col items-center justify-center px-4 pb-24 pt-20">
     <div id="bg-layer" class="pointer-events-none absolute inset-0 hidden" aria-hidden="true"></div>
-    <div id="book-meta" class="relative z-10 mb-4 hidden max-w-2xl text-center">
+    <div id="book-meta" class="relative z-10 mb-4 hidden max-w-2xl rounded-xl bg-black/50 px-4 py-2 text-center backdrop-blur-sm">
       <p id="book-subtitle" class="text-lg font-medium text-white"></p>
       <p id="book-description" class="mt-1 text-sm text-white/70"></p>
     </div>
@@ -270,7 +273,7 @@
       <button id="btn-next" type="button" class="shrink-0 rounded-full bg-[#19A975] px-4 py-2.5 font-medium text-white shadow hover:bg-[#148a61] disabled:opacity-40">Next &rarr;</button>
       <button id="btn-last" type="button" class="shrink-0 rounded-full bg-white/90 px-3 py-2.5 font-medium text-slate-700 shadow hover:bg-white disabled:opacity-40" aria-label="Last page">&raquo;</button>
     </div>
-    <p class="fixed bottom-20 z-40 hidden text-xs text-white/60" id="hint">Use the arrow keys or the buttons to turn pages.</p>
+    <p class="fixed bottom-20 z-40 hidden rounded-full bg-black/50 px-3 py-1 text-xs text-white/60 backdrop-blur-sm" id="hint">Use the arrow keys or the buttons to turn pages.</p>
   </main>
 </body>
 </html>
