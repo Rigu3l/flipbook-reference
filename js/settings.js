@@ -32,7 +32,7 @@
     book = res.data;
     if (!book) { showError('This flipbook was not found, or it is not yours.'); return; }
     $('#settings-title').textContent = 'Settings — ' + (book.title || 'Untitled');
-    $('#settings-view').href = 'viewer.html?id=' + book.id + '&v=ui7';
+    $('#settings-view').href = 'viewer.html?id=' + book.id + '&v=ui8';
     /* Password state (has_password is not exposed to the owner row, so
        check the hash column directly — the owner can read their own row). */
     var pwRes = await window.fbClient.from('flipbooks')

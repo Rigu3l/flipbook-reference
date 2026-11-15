@@ -275,9 +275,9 @@
       book = res.data;
       if (!book) { showError('This flipbook does not exist or is not yours.'); return; }
       $('#design-for').textContent = 'For "' + book.title + '" · ' + (book.page_count || 0) + ' pages';
-      $('#design-view').href = 'viewer.html?id=' + book.id + '&v=ui7';
+      $('#design-view').href = 'viewer.html?id=' + book.id + '&v=ui8';
       var shareSide = document.getElementById('design-share');
-      if (shareSide) shareSide.href = 'viewer.html?id=' + book.id + '&v=ui7';
+      if (shareSide) shareSide.href = 'viewer.html?id=' + book.id + '&v=ui8';
       var settingsLink = document.getElementById('header-settings-link');
       if (settingsLink) { settingsLink.href = 'settings.html?id=' + book.id; settingsLink.classList.remove('hidden'); }
       ['nav-settings', 'nav-lead', 'nav-replace', 'nav-copy'].forEach(function (navId) {
